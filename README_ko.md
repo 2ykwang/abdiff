@@ -25,12 +25,12 @@ CLAUDE.md에 규칙을 넣어도 Claude가 그 규칙을 따르는지는 몇 번
 
 ## 데모
 
-이 도구를 어디에 쓰는지 보여주는 실험 4개입니다. 폴더마다 실행 스크립트, 바꾼 내용, 결과 리포트가 있습니다.
+이 도구를 어디에 쓰는지 보여주는 실험 4개입니다. 링크를 열면 리포트가 나옵니다. 실행 스크립트와 바꾼 내용은 [demos/](demos/)에 있습니다.
 
-- [fluent-korean](demos/fluent-korean/): 한국어 output style을 켜면 코드 분석 글이 달라지는지
-- [payment-docs](demos/payment-docs/): 정책 문서를 넣으면 Claude가 읽고 따르는지
-- [fastapi-architecture](demos/fastapi-architecture/): 아키텍처 문서를 주면 새 코드의 위치가 달라지는지
-- [doc-sentence](demos/doc-sentence/): 스펙의 숫자 하나를 바꾸면 코드에 반영되는지
+- [fluent-korean](https://2ykwang.github.io/abdiff/demos/fluent-korean/report.html): 한국어 output style을 켜면 코드 분석 글이 달라지는지
+- [payment-docs](https://2ykwang.github.io/abdiff/demos/payment-docs/report.html): 정책 문서를 넣으면 Claude가 읽고 따르는지
+- [fastapi-architecture](https://2ykwang.github.io/abdiff/demos/fastapi-architecture/report.html): 아키텍처 문서를 주면 새 코드의 위치가 달라지는지
+- [doc-sentence](https://2ykwang.github.io/abdiff/demos/doc-sentence/report.html): 스펙의 숫자 하나를 바꾸면 코드에 반영되는지
 
 ## 알아둘 것
 

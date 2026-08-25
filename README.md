@@ -26,12 +26,12 @@ You add a rule to CLAUDE.md, use it a few times, and end up guessing whether Cla
 
 ## Demos
 
-Four experiments that show what this tool is for. Each folder has the setup, the exact change, and the resulting report.
+Four experiments that show what this tool is for. Each link opens the report. The setup and the exact change for each are in [demos/](demos/).
 
-- [fluent-korean](demos/fluent-korean/): whether turning on a Korean output style changes a code-analysis write-up
-- [payment-docs](demos/payment-docs/): whether Claude reads and follows policy docs once they exist
-- [fastapi-architecture](demos/fastapi-architecture/): whether an architecture doc changes where new endpoint code lands
-- [doc-sentence](demos/doc-sentence/): whether changing one number in an imported spec reaches the code
+- [fluent-korean](https://2ykwang.github.io/abdiff/demos/fluent-korean/report.html): whether turning on a Korean output style changes a code-analysis write-up
+- [payment-docs](https://2ykwang.github.io/abdiff/demos/payment-docs/report.html): whether Claude reads and follows policy docs once they exist
+- [fastapi-architecture](https://2ykwang.github.io/abdiff/demos/fastapi-architecture/report.html): whether an architecture doc changes where new endpoint code lands
+- [doc-sentence](https://2ykwang.github.io/abdiff/demos/doc-sentence/report.html): whether changing one number in an imported spec reaches the code
 
 ## Good to know
 
