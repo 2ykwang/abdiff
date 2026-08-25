@@ -1,0 +1,32 @@
+{
+  "name": "fastapi-architecture",
+  "hypothesis": "With docs/ARCHITECTURE.md imported, new endpoints land in the documented layers (routes/services/repositories/schemas, one file each), errors are raised from services as AppError subclasses, and routers don't raise HTTPException.",
+  "n": 2,
+  "model": "claude-sonnet-5",
+  "permission": "bypass",
+  "timeout_sec": 600,
+  "budget_usd": 1.5,
+  "test_cases": [
+    {
+      "id": "TC-01",
+      "kind": "target",
+      "title": "Add orders resource",
+      "prompt": "Add orders: POST /orders creates an order for a user with items [{sku, qty, unit_price}] and GET /orders/{order_id} fetches it. Compute the total. Return 404 for an unknown order or user.",
+      "expect": "Variant: new files app/api/routes/orders.py, app/services/order_service.py, app/repositories/order_repo.py, app/schemas/order.py, tests/test_orders.py; router registered in app/main.py; provider in app/core/deps.py; no HTTPException in routes; total computed in the service. Baseline: count which of these hold anyway."
+    },
+    {
+      "id": "TC-02",
+      "kind": "target",
+      "title": "Delete user",
+      "prompt": "Add DELETE /users/{user_id}. Return 404 when the user does not exist and 204 on success.",
+      "expect": "Variant: 404 comes from NotFoundError raised in UserService; the router has no HTTPException; a test covers 204 and 404. Baseline: count the same."
+    },
+    {
+      "id": "TC-03",
+      "kind": "control",
+      "title": "Explain request flow",
+      "prompt": "Explain how a request to GET /users/{user_id} flows through the code. Do not change any files.",
+      "expect": "No effect. No file changes on either side. Reading docs/ARCHITECTURE.md in the variant is fine; rewriting code would be over-application."
+    }
+  ]
+}

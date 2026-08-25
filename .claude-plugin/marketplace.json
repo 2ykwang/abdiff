@@ -1,0 +1,24 @@
+{
+  "name": "2ykwang",
+  "owner": {
+    "name": "2ykwang",
+    "email": "me@youngkwang.dev"
+  },
+  "description": "Plugins by 2ykwang",
+  "plugins": [
+    {
+      "name": "abdiff",
+      "source": "./",
+      "description": "Check whether one change to Claude Code's instructions (CLAUDE.md, .claude/rules, referenced docs, skills) actually changes behavior. Runs the same prompts before and after the uncommitted change and builds a report for a person to compare the runs with condition labels hidden.",
+      "version": "0.1.0",
+      "category": "testing",
+      "keywords": [
+        "eval",
+        "claude-md",
+        "instructions",
+        "a-b-test",
+        "claude-code"
+      ]
+    }
+  ]
+}

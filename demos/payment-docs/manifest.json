@@ -1,0 +1,71 @@
+{
+  "n": 2,
+  "base_commit": "be2d433adad69ab9001d7feda73bfc7687c645e8",
+  "claude_version": "2.1.245 (Claude Code)",
+  "started_at": "2026-08-25T23:01:23+09:00",
+  "finished_at": "2026-08-25T23:10:52+09:00",
+  "interrupted": false,
+  "command_template": "claude -p '$PROMPT' --output-format stream-json --verbose --setting-sources project --strict-mcp-config --no-session-persistence --max-budget-usd 1.5 --settings '<InstructionsLoaded hook settings JSON>' --model claude-sonnet-5 --dangerously-skip-permissions",
+  "protocol": [
+    [
+      "model",
+      "claude-sonnet-5"
+    ],
+    [
+      "permissions",
+      "--dangerously-skip-permissions (allow everything)"
+    ],
+    [
+      "setting sources",
+      "project - excludes ~/.claude CLAUDE.md, settings, plugins, hooks, skills"
+    ],
+    [
+      "MCP",
+      "none (--strict-mcp-config, no --mcp-config)"
+    ],
+    [
+      "auto memory",
+      "off (CLAUDE_CODE_DISABLE_AUTO_MEMORY=1)"
+    ],
+    [
+      "session persistence",
+      "off (--no-session-persistence)"
+    ],
+    [
+      "instruction load record",
+      "InstructionsLoaded hook -> instructions.jsonl"
+    ],
+    [
+      "budget cap",
+      "$1.5 per run (--max-budget-usd)"
+    ],
+    [
+      "timeout",
+      "600s per run"
+    ],
+    [
+      "worktree",
+      "one per run, created in a temp directory outside the repo and removed afterwards. Directory name and temp commit message never contain the condition name"
+    ],
+    [
+      "baseline commit",
+      "be2d433adad69ab9001d7feda73bfc7687c645e8"
+    ],
+    [
+      "variant",
+      "baseline commit + variant.patch"
+    ],
+    [
+      "setup",
+      "none"
+    ],
+    [
+      "run order",
+      "per test case, for each run k: baseline then variant, alternating, sequential"
+    ],
+    [
+      "Claude Code",
+      "2.1.245 (Claude Code)"
+    ]
+  ]
+}

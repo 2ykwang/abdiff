@@ -1,0 +1,4 @@
+[project]
+name = "orders-api"
+version = "0.1.0"
+dependencies = ["fastapi>=0.115", "pydantic>=2", "httpx", "pytest"]

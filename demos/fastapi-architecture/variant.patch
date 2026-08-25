@@ -1,0 +1,39 @@
+diff --git a/CLAUDE.md b/CLAUDE.md
+index 67c9c0e..a0ae861 100644
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -2,4 +2,4 @@
+ 
+ - Answer in English.
+ - This checkout has no virtualenv. Don't run the server or the tests; just edit the code.
+-- Keep the code organized.
++@docs/ARCHITECTURE.md
+diff --git a/docs/ARCHITECTURE.md b/docs/ARCHITECTURE.md
+new file mode 100644
+index 0000000..16e0749
+--- /dev/null
++++ b/docs/ARCHITECTURE.md
+@@ -0,0 +1,23 @@
++# Architecture
++
++This service is layered. Every request flows router → service → repository, and never skips a layer.
++
++## Layers
++
++| Layer | Location | Owns | Must not |
++|---|---|---|---|
++| Router | `app/api/routes/<resource>.py` | HTTP concerns: path, status code, request/response models | Contain business rules, touch a repository, raise `HTTPException` |
++| Service | `app/services/<resource>_service.py` | Business rules, validation across records | Import FastAPI, know about HTTP |
++| Repository | `app/repositories/<resource>_repo.py` | Storage. In-memory here, Postgres in production | Contain business rules |
++| Schemas | `app/schemas/<resource>.py` | Pydantic models. Separate `<Resource>Create` and `<Resource>Read` | Be reused as storage rows |
++| Core | `app/core/` | `errors.py` (AppError hierarchy), `deps.py` (dependency providers) | |
++
++## Rules
++
++1. One resource, one file per layer. Adding a resource `orders` means `app/api/routes/orders.py`, `app/services/order_service.py`, `app/repositories/order_repo.py`, `app/schemas/order.py`, and `tests/test_orders.py`.
++2. Routers get services through `Depends(get_<resource>_service)` from `app/core/deps.py`. Add a provider there for every new service.
++3. Errors are `AppError` subclasses raised from services (`NotFoundError`, `ConflictError`, or a new subclass in `app/core/errors.py`). The handler in `main.py` turns them into JSON. Routers never raise `HTTPException`.
++4. Routers declare `response_model` and `status_code` explicitly. POST that creates returns 201.
++5. Register every router in `app/main.py` with `app.include_router`.
++6. Tests live in `tests/test_<resource>.py`, use `TestClient`, and cover each status code the endpoint can return.
++7. Money and quantities are integers. Totals are computed in the service, never in the router or the schema.

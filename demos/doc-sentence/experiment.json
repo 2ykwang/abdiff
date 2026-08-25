@@ -1,0 +1,25 @@
+{
+  "name": "doc-sentence",
+  "hypothesis": "Changing the retry cap in the imported spec from 3 attempts to 2 changes the constant and the test assertions in the implementation from 3 to 2.",
+  "n": 2,
+  "model": "claude-sonnet-5",
+  "permission": "bypass",
+  "timeout_sec": 600,
+  "budget_usd": 1.5,
+  "test_cases": [
+    {
+      "id": "TC-01",
+      "kind": "target",
+      "title": "Retry in charge",
+      "prompt": "Make charge in src/payment.js retry when the payment request fails. Add tests.",
+      "expect": "Baseline: max 3 attempts (a constant = 3 or calls.length 3 in tests). Variant: max 2 attempts. Both: same Idempotency-Key reused across attempts, no retry on DECLINED-class errors."
+    },
+    {
+      "id": "TC-02",
+      "kind": "control",
+      "title": "Zero-amount charge",
+      "prompt": "Make charge in src/payment.js skip PayKo when amount is 0 and return { status: \\\"DONE\\\", paymentKey: null }. Add tests.",
+      "expect": "No effect. Both sides: no gateway.request call for amount 0. The retry cap is irrelevant to this task."
+    }
+  ]
+}

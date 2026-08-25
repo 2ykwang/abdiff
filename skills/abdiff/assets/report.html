@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --bg-2: #f6f6f6;
+  --bg-3: #ebebeb;
+  --fg: #1c1c1c;
+  --fg-2: #555555;
+  --fg-3: #7d7d7d;
+  --line: #d9d9d9;
+  --line-2: #ababab;
+  --add: #1e7238;
+  --add-bg: #e7f4eb;
+  --del-bg: #f0f0f0;
+  --focus: #1c1c1c;
+  --sans: "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Malgun Gothic", system-ui, -apple-system, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", "Nanum Gothic Coding", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121212;
+    --bg-2: #1a1a1a;
+    --bg-3: #262626;
+    --fg: #e4e4e4;
+    --fg-2: #a6a6a6;
+    --fg-3: #7c7c7c;
+    --line: #333333;
+    --line-2: #555555;
+    --add: #7cd396;
+    --add-bg: #17301f;
+    --del-bg: #222222;
+    --focus: #e4e4e4;
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 15.5px;
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+h1 { font-size: 26px; line-height: 1.3; margin: 0 0 6px; font-weight: 600; letter-spacing: -0.01em; }
+h2 { font-size: 20px; line-height: 1.35; margin: 0 0 18px; font-weight: 600; }
+h3 { font-size: 16px; line-height: 1.4; margin: 28px 0 10px; font-weight: 600; }
+p { margin: 0 0 12px; }
+ul, ol { margin: 0 0 12px; padding-left: 22px; }
+li { margin: 0 0 4px; }
+a { color: inherit; }
+code { font-family: var(--mono); font-size: 0.92em; background: var(--bg-3); padding: 1px 4px; border-radius: 2px; }
+pre {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 13.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+button.plain {
+  font: inherit; font-size: 14px; color: var(--fg-2);
+  background: none; border: 1px solid var(--line-2); padding: 4px 10px; cursor: pointer;
+}
+button.plain:hover { color: var(--fg); border-color: var(--fg); }
+textarea {
+  display: block; width: 100%; margin-top: 6px;
+  font: inherit; font-size: 14.5px; line-height: 1.55;
+  color: var(--fg); background: var(--bg); border: 1px solid var(--line-2); padding: 8px 10px; resize: vertical;
+}
+
+/* layout: fixed table of contents on the left + content */
+.layout { display: grid; grid-template-columns: 236px minmax(0, 1fr); }
+.toc {
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  padding: 28px 18px; border-right: 1px solid var(--line); background: var(--bg-2); font-size: 14px;
+}
+.toc ol { list-style: none; margin: 0; padding: 0; }
+.toc li { margin: 0; }
+.toc a { display: block; padding: 5px 8px; text-decoration: none; color: var(--fg-2); border-left: 2px solid transparent; }
+.toc a:hover { color: var(--fg); }
+.toc a[aria-current="true"] { color: var(--fg); border-left-color: var(--fg); background: var(--bg-3); }
+.toc .ctl { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--line); }
+.toc .ctl label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; font-weight: 500; margin-bottom: 12px; }
+.toc .ctl input { margin: 4px 0 0; accent-color: var(--fg); }
+.content { padding: 36px 44px 120px; max-width: 1240px; min-width: 0; }
+
+.sec { padding-top: 40px; margin-top: 40px; border-top: 1px solid var(--line); }
+.sec:first-child { border-top: 0; margin-top: 0; padding-top: 0; }
+.doc-meta { color: var(--fg-2); font-size: 14px; margin: 0 0 28px; }
+.fine { color: var(--fg-2); font-size: 14px; }
+.field { margin-top: 14px; }
+.lbl { font-size: 12.5px; color: var(--fg-2); font-weight: 500; letter-spacing: 0.02em; margin: 0 0 6px; }
+.block { border: 1px solid var(--line); background: var(--bg-2); padding: 12px 14px; }
+.warn { font-weight: 600; color: var(--fg); }
+.tag {
+  display: inline-block; font-family: var(--sans); font-size: 11.5px; color: var(--fg-2);
+  border: 1px solid var(--line-2); padding: 0 5px; margin-left: 6px; line-height: 1.5; vertical-align: 1px;
+}
+
+/* tables */
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th, td { text-align: left; vertical-align: top; padding: 8px 12px; }
+thead th { border-bottom: 1px solid var(--line-2); font-weight: 600; }
+tbody tr { border-top: 1px solid var(--line); }
+tbody tr:last-child { border-bottom: 1px solid var(--line); }
+table.kv th { width: 180px; color: var(--fg-2); font-weight: 500; white-space: nowrap; }
+
+/* diff */
+.diff { font-family: var(--mono); font-size: 13.5px; line-height: 1.6; border-top: 1px solid var(--line); overflow-x: auto; }
+.diff .dl { display: block; padding: 0 12px; white-space: pre; }
+.diff .meta { color: var(--fg-3); }
+.diff .hunk { color: var(--fg-2); background: var(--bg-2); }
+.diff .add { background: var(--add-bg); color: var(--add); }
+.diff .del { background: var(--del-bg); color: var(--fg-2); text-decoration: line-through; text-decoration-color: var(--line-2); }
+.stat { white-space: nowrap; }
+.stat .add { color: var(--add); }
+.stat .del { color: var(--fg-2); }
+
+/* details, shared */
+details > summary { cursor: pointer; list-style: none; }
+details > summary::-webkit-details-marker { display: none; }
+summary::before {
+  content: ""; display: inline-block; width: 6px; height: 6px;
+  border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg); margin: 0 10px 2px 2px; flex: none;
+}
+details[open] > summary::before { transform: rotate(45deg); }
+
+/* case */
+.case-kind {
+  display: inline-block; font-size: 13px; font-weight: 400; color: var(--fg-2);
+  border: 1px solid var(--line-2); padding: 0 6px; margin-left: 10px; vertical-align: 2px; line-height: 1.5;
+}
+h2 .cid { font-family: var(--mono); font-weight: 500; margin-right: 12px; }
+
+/* run pair */
+.pair { margin-top: 14px; border: 1px solid var(--line); }
+.pair > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; padding: 8px 12px; background: var(--bg-2); font-size: 14px; }
+.pair > summary:hover { background: var(--bg-3); }
+.pair-title { font-weight: 600; font-family: var(--mono); }
+.pair-sums { display: flex; flex-wrap: wrap; gap: 4px 18px; color: var(--fg-2); }
+.pair-sum .arm-label { color: var(--fg); font-weight: 500; }
+.pair[open] > summary .pair-sums { display: none; }
+.pair-body {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr));
+  gap: 1px; background: var(--line); border-top: 1px solid var(--line);
+}
+
+/* single run */
+.run { background: var(--bg); min-width: 0; }
+.run > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 8px 12px; font-size: 14px; border-bottom: 1px solid var(--line); }
+.run:not([open]) > summary { border-bottom: 0; }
+.run > summary .arm-label { font-weight: 600; }
+.run-sum { color: var(--fg-2); }
+.run-section { padding: 12px 12px 0; }
+.resp { background: var(--bg-2); border: 1px solid var(--line); padding: 12px 14px; line-height: 1.65; }
+.run-meta { margin: 0; padding: 12px 12px 14px; font-size: 13px; color: var(--fg-2); }
+.run-meta ~ details { margin: 0 12px 12px; }
+
+/* trace */
+.trace > summary, .instr > summary { font-size: 14px; padding: 4px 0; }
+.tr { list-style: none; margin: 8px 0 0; padding: 0; border: 1px solid var(--line); counter-reset: step; font-family: var(--mono); font-size: 13px; line-height: 1.55; }
+.tr li { display: grid; grid-template-columns: 2.5em 6em minmax(0, 1fr); gap: 0 10px; padding: 4px 10px; margin: 0; }
+.tr li + li { border-top: 1px solid var(--line); }
+.tr li::before { counter-increment: step; content: counter(step); color: var(--fg-3); text-align: right; }
+.tr li.sub::before { content: counter(step) " ↳"; }
+.tr li.sub .tool { color: var(--fg-2); }
+.tool { font-weight: 600; }
+.tr .arg { white-space: pre-wrap; overflow-wrap: anywhere; }
+.tr details.tres { grid-column: 2 / -1; margin-top: 2px; }
+.tr details.tres > summary { font-family: var(--sans); font-size: 12.5px; color: var(--fg-3); padding: 2px 0; }
+.tr .tres-body { margin: 4px 0 6px; padding: 8px 10px; border: 1px solid var(--line); background: var(--bg-2); font-size: 12.5px; max-height: 60vh; overflow: auto; }
+.tr .tres-none { grid-column: 2 / -1; font-family: var(--sans); font-size: 12.5px; color: var(--fg-3); }
+
+/* file lists (changed files, loaded instructions) */
+.files { list-style: none; margin: 4px 0 0; padding: 0; font-family: var(--mono); font-size: 13px; }
+.files li { display: flex; justify-content: space-between; gap: 16px; padding: 2px 0; margin: 0; }
+.files .path { overflow-wrap: anywhere; }
+.files .fine { font-family: var(--sans); white-space: nowrap; }
+details.file { border: 1px solid var(--line); margin-top: 6px; }
+details.file > summary { display: flex; align-items: baseline; gap: 8px; padding: 6px 12px; font-family: var(--mono); font-size: 13px; background: var(--bg-2); }
+details.file > summary .path { flex: 1; overflow-wrap: anywhere; }
+details.file[open] > summary { border-bottom: 1px solid var(--line); }
+
+/* judgment input */
+.judge { margin-top: 28px; border: 1px solid var(--line-2); padding: 14px 16px 16px; }
+.judge h3 { margin: 0 0 10px; }
+.judge-opts { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.judge-opts legend { padding: 0; margin-bottom: 8px; color: var(--fg-2); font-size: 14px; }
+.judge-opts label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.judge-opts input { margin: 0; accent-color: var(--fg); }
+.judge-note { display: block; margin-top: 12px; font-size: 14px; color: var(--fg-2); }
+
+/* summary */
+.sum-table td.m { white-space: pre-wrap; overflow-wrap: anywhere; }
+.sum-table th.c { width: 90px; white-space: nowrap; }
+.sum-table th.j { width: 130px; white-space: nowrap; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 16px; }
+  .toc ol { display: flex; flex-wrap: wrap; gap: 2px 4px; }
+  .toc a { border-left: 0; border-bottom: 2px solid transparent; padding: 4px 6px; }
+  .toc a[aria-current="true"] { background: none; border-bottom-color: var(--fg); }
+  .toc .ctl { margin-top: 12px; padding-top: 12px; }
+  .content { padding: 24px 16px 80px; }
+  table.kv th { width: auto; white-space: normal; }
+}
+</style>
+</head>
+<body data-storage-key="{{STORAGE_KEY}}" data-experiment="{{EXPERIMENT}}">
+<div class="layout">
+<nav class="toc" aria-label="Table of contents">
+  <ol>
+    <li><a href="#overview">Overview</a></li>
+    {{TOC_CASES}}
+    <li><a href="#summary">Summary</a></li>
+    <li><a href="#change">The change</a></li>
+    <li><a href="#protocol">Fixed conditions</a></li>
+  </ol>
+  <div class="ctl">
+    <label><input type="checkbox" id="blind" checked> <span>Blind mode</span></label>
+    <button type="button" id="save-html" class="plain">Save HTML</button>
+  </div>
+</nav>
+<main class="content">
+{{CONTENT}}
+</main>
+</div>
+<script>
+(function () {
+  var body = document.body;
+  var KEY = body.getAttribute('data-storage-key');
+  var blindBox = document.getElementById('blind');
+  var cases = Array.prototype.slice.call(document.querySelectorAll('section.case'));
+  var labels = {};
+
+  // The blind assignment (X/Y mapping per case, left/right per pair) is made once and stored.
+  // Redrawing it on every toggle would change what X/Y mean mid-judgment.
+  var assign = null;
+  function assignment() {
+    if (assign) return assign;
+    try { assign = JSON.parse(localStorage.getItem(KEY + ':blind') || 'null'); } catch (e) { assign = null; }
+    if (!assign) {
+      assign = {};
+      cases.forEach(function (sec) {
+        assign[sec.id] = { flip: Math.random() < 0.5, swap: Array.prototype.map.call(sec.querySelectorAll('.pair'), function () { return Math.random() < 0.5; }) };
+      });
+      try { localStorage.setItem(KEY + ':blind', JSON.stringify(assign)); } catch (e) {}
+    }
+    return assign;
+  }
+
+  function setCase(sec, on) {
+    var a = assignment()[sec.id];
+    var flip = on && a.flip;
+    var map = on
+      ? { base: flip ? 'Condition Y' : 'Condition X', 'var': flip ? 'Condition X' : 'Condition Y' }
+      : { base: 'baseline', 'var': 'variant' };
+    labels[sec.id] = map;
+    Array.prototype.forEach.call(sec.querySelectorAll('.arm-label'), function (el) {
+      el.textContent = map[el.getAttribute('data-arm')];
+    });
+    Array.prototype.forEach.call(sec.querySelectorAll('.judge-opts label'), function (l) {
+      var arm = l.getAttribute('data-arm');
+      if (arm === 'tie') { l.style.order = 3; return; }
+      if (arm === 'unsure') { l.style.order = 4; return; }
+      var first = on ? map[arm] === 'Condition X' : arm === 'base';
+      l.style.order = first ? 1 : 2;
+    });
+    Array.prototype.forEach.call(sec.querySelectorAll('.pair'), function (pair, idx) {
+      var swap = on && !!a.swap[idx];
+      Array.prototype.forEach.call(pair.querySelectorAll('.run, .pair-sum'), function (el) {
+        var first = (el.getAttribute('data-arm') === 'base') !== swap;
+        el.style.order = first ? 1 : 2;
+      });
+    });
+  }
+
+  function verdictOf(sec) {
+    var c = sec.querySelector('.judge-opts input:checked');
+    return c ? c.value : null;
+  }
+
+  function updateSummary() {
+    cases.forEach(function (sec) {
+      var row = document.querySelector('#sum-table tr[data-case="' + sec.getAttribute('data-case') + '"]');
+      var v = verdictOf(sec);
+      var memo = sec.querySelector('.judge-note textarea').value.trim();
+      row.querySelector('.j').textContent = !v ? 'not judged' : (v === 'tie' ? 'No difference' : v === 'unsure' ? "Can't tell" : labels[sec.id][v]);
+      row.querySelector('.m').textContent = memo || '-';
+    });
+  }
+
+  function applyBlind(on) {
+    cases.forEach(function (sec) { setCase(sec, on); });
+    updateSummary();
+  }
+
+  // Judgments and notes are stored in this browser (keyed by experiment name + start time).
+  function collect() {
+    var out = { cases: {} };
+    cases.forEach(function (sec) {
+      out.cases[sec.getAttribute('data-case')] = { verdict: verdictOf(sec), memo: sec.querySelector('.judge-note textarea').value };
+    });
+    out.observations = document.getElementById('observations').value;
+    return out;
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(collect())); } catch (e) {} }
+  function restore() {
+    var d;
+    try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { d = null; }
+    if (!d) return;
+    cases.forEach(function (sec) {
+      var v = d.cases && d.cases[sec.getAttribute('data-case')];
+      if (!v) return;
+      if (v.verdict) { var i = sec.querySelector('.judge-opts input[value="' + v.verdict + '"]'); if (i) i.checked = true; }
+      sec.querySelector('.judge-note textarea').value = v.memo || '';
+    });
+    document.getElementById('observations').value = d.observations || '';
+  }
+
+  blindBox.addEventListener('change', function () { applyBlind(blindBox.checked); });
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.matches && e.target.matches('.judge-opts input')) { updateSummary(); save(); }
+  });
+  document.addEventListener('input', function (e) {
+    if (e.target && e.target.matches && e.target.matches('.judge-note textarea, #observations')) { updateSummary(); save(); }
+  });
+
+  // Download a copy with judgments and notes baked into the DOM; localStorage does not travel with the file.
+  document.getElementById('save-html').addEventListener('click', function () {
+    var clone = document.documentElement.cloneNode(true);
+    var liveT = document.querySelectorAll('textarea'), cloneT = clone.querySelectorAll('textarea');
+    for (var i = 0; i < liveT.length; i++) cloneT[i].textContent = liveT[i].value;
+    var liveR = document.querySelectorAll('input[type="radio"]'), cloneR = clone.querySelectorAll('input[type="radio"]');
+    for (var j = 0; j < liveR.length; j++) { if (liveR[j].checked) cloneR[j].setAttribute('checked', ''); else cloneR[j].removeAttribute('checked'); }
+    var blob = new Blob(['<!DOCTYPE html>\n' + clone.outerHTML], { type: 'text/html' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (body.getAttribute('data-experiment') || 'abdiff') + '-report.html';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(a.href);
+  });
+
+  restore();
+  applyBlind(blindBox.checked);
+
+  // highlight the current position in the table of contents
+  var links = {};
+  Array.prototype.forEach.call(document.querySelectorAll('.toc a[href^="#"]'), function (a) {
+    links[a.getAttribute('href').slice(1)] = a;
+  });
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        Object.keys(links).forEach(function (id) { links[id].removeAttribute('aria-current'); });
+        var a = links[en.target.id];
+        if (a) a.setAttribute('aria-current', 'true');
+      });
+    }, { rootMargin: '0px 0px -70% 0px' });
+    Object.keys(links).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) io.observe(el);
+    });
+  }
+})();
+</script>
+</body>
+</html>

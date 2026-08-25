@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>abdiff / doc-sentence</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --bg-2: #f6f6f6;
+  --bg-3: #ebebeb;
+  --fg: #1c1c1c;
+  --fg-2: #555555;
+  --fg-3: #7d7d7d;
+  --line: #d9d9d9;
+  --line-2: #ababab;
+  --add: #1e7238;
+  --add-bg: #e7f4eb;
+  --del-bg: #f0f0f0;
+  --focus: #1c1c1c;
+  --sans: "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Malgun Gothic", system-ui, -apple-system, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", "Nanum Gothic Coding", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121212;
+    --bg-2: #1a1a1a;
+    --bg-3: #262626;
+    --fg: #e4e4e4;
+    --fg-2: #a6a6a6;
+    --fg-3: #7c7c7c;
+    --line: #333333;
+    --line-2: #555555;
+    --add: #7cd396;
+    --add-bg: #17301f;
+    --del-bg: #222222;
+    --focus: #e4e4e4;
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 15.5px;
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+h1 { font-size: 26px; line-height: 1.3; margin: 0 0 6px; font-weight: 600; letter-spacing: -0.01em; }
+h2 { font-size: 20px; line-height: 1.35; margin: 0 0 18px; font-weight: 600; }
+h3 { font-size: 16px; line-height: 1.4; margin: 28px 0 10px; font-weight: 600; }
+p { margin: 0 0 12px; }
+ul, ol { margin: 0 0 12px; padding-left: 22px; }
+li { margin: 0 0 4px; }
+a { color: inherit; }
+code { font-family: var(--mono); font-size: 0.92em; background: var(--bg-3); padding: 1px 4px; border-radius: 2px; }
+pre {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 13.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+button.plain {
+  font: inherit; font-size: 14px; color: var(--fg-2);
+  background: none; border: 1px solid var(--line-2); padding: 4px 10px; cursor: pointer;
+}
+button.plain:hover { color: var(--fg); border-color: var(--fg); }
+textarea {
+  display: block; width: 100%; margin-top: 6px;
+  font: inherit; font-size: 14.5px; line-height: 1.55;
+  color: var(--fg); background: var(--bg); border: 1px solid var(--line-2); padding: 8px 10px; resize: vertical;
+}
+
+/* layout: fixed table of contents on the left + content */
+.layout { display: grid; grid-template-columns: 236px minmax(0, 1fr); }
+.toc {
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  padding: 28px 18px; border-right: 1px solid var(--line); background: var(--bg-2); font-size: 14px;
+}
+.toc ol { list-style: none; margin: 0; padding: 0; }
+.toc li { margin: 0; }
+.toc a { display: block; padding: 5px 8px; text-decoration: none; color: var(--fg-2); border-left: 2px solid transparent; }
+.toc a:hover { color: var(--fg); }
+.toc a[aria-current="true"] { color: var(--fg); border-left-color: var(--fg); background: var(--bg-3); }
+.toc .ctl { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--line); }
+.toc .ctl label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; font-weight: 500; margin-bottom: 12px; }
+.toc .ctl input { margin: 4px 0 0; accent-color: var(--fg); }
+.content { padding: 36px 44px 120px; max-width: 1240px; min-width: 0; }
+
+.sec { padding-top: 40px; margin-top: 40px; border-top: 1px solid var(--line); }
+.sec:first-child { border-top: 0; margin-top: 0; padding-top: 0; }
+.doc-meta { color: var(--fg-2); font-size: 14px; margin: 0 0 28px; }
+.fine { color: var(--fg-2); font-size: 14px; }
+.field { margin-top: 14px; }
+.lbl { font-size: 12.5px; color: var(--fg-2); font-weight: 500; letter-spacing: 0.02em; margin: 0 0 6px; }
+.block { border: 1px solid var(--line); background: var(--bg-2); padding: 12px 14px; }
+.warn { font-weight: 600; color: var(--fg); }
+.tag {
+  display: inline-block; font-family: var(--sans); font-size: 11.5px; color: var(--fg-2);
+  border: 1px solid var(--line-2); padding: 0 5px; margin-left: 6px; line-height: 1.5; vertical-align: 1px;
+}
+
+/* tables */
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th, td { text-align: left; vertical-align: top; padding: 8px 12px; }
+thead th { border-bottom: 1px solid var(--line-2); font-weight: 600; }
+tbody tr { border-top: 1px solid var(--line); }
+tbody tr:last-child { border-bottom: 1px solid var(--line); }
+table.kv th { width: 180px; color: var(--fg-2); font-weight: 500; white-space: nowrap; }
+
+/* diff */
+.diff { font-family: var(--mono); font-size: 13.5px; line-height: 1.6; border-top: 1px solid var(--line); overflow-x: auto; }
+.diff .dl { display: block; padding: 0 12px; white-space: pre; }
+.diff .meta { color: var(--fg-3); }
+.diff .hunk { color: var(--fg-2); background: var(--bg-2); }
+.diff .add { background: var(--add-bg); color: var(--add); }
+.diff .del { background: var(--del-bg); color: var(--fg-2); text-decoration: line-through; text-decoration-color: var(--line-2); }
+.stat { white-space: nowrap; }
+.stat .add { color: var(--add); }
+.stat .del { color: var(--fg-2); }
+
+/* details, shared */
+details > summary { cursor: pointer; list-style: none; }
+details > summary::-webkit-details-marker { display: none; }
+summary::before {
+  content: ""; display: inline-block; width: 6px; height: 6px;
+  border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg); margin: 0 10px 2px 2px; flex: none;
+}
+details[open] > summary::before { transform: rotate(45deg); }
+
+/* case */
+.case-kind {
+  display: inline-block; font-size: 13px; font-weight: 400; color: var(--fg-2);
+  border: 1px solid var(--line-2); padding: 0 6px; margin-left: 10px; vertical-align: 2px; line-height: 1.5;
+}
+h2 .cid { font-family: var(--mono); font-weight: 500; margin-right: 12px; }
+
+/* run pair */
+.pair { margin-top: 14px; border: 1px solid var(--line); }
+.pair > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; padding: 8px 12px; background: var(--bg-2); font-size: 14px; }
+.pair > summary:hover { background: var(--bg-3); }
+.pair-title { font-weight: 600; font-family: var(--mono); }
+.pair-sums { display: flex; flex-wrap: wrap; gap: 4px 18px; color: var(--fg-2); }
+.pair-sum .arm-label { color: var(--fg); font-weight: 500; }
+.pair[open] > summary .pair-sums { display: none; }
+.pair-body {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(460px, 100%), 1fr));
+  gap: 1px; background: var(--line); border-top: 1px solid var(--line);
+}
+
+/* single run */
+.run { background: var(--bg); min-width: 0; }
+.run > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 8px 12px; font-size: 14px; border-bottom: 1px solid var(--line); }
+.run:not([open]) > summary { border-bottom: 0; }
+.run > summary .arm-label { font-weight: 600; }
+.run-sum { color: var(--fg-2); }
+.run-section { padding: 12px 12px 0; }
+.resp { background: var(--bg-2); border: 1px solid var(--line); padding: 12px 14px; line-height: 1.65; }
+.run-meta { margin: 0; padding: 12px 12px 14px; font-size: 13px; color: var(--fg-2); }
+.run-meta ~ details { margin: 0 12px 12px; }
+
+/* trace */
+.trace > summary, .instr > summary { font-size: 14px; padding: 4px 0; }
+.tr { list-style: none; margin: 8px 0 0; padding: 0; border: 1px solid var(--line); counter-reset: step; font-family: var(--mono); font-size: 13px; line-height: 1.55; }
+.tr li { display: grid; grid-template-columns: 2.5em 6em minmax(0, 1fr); gap: 0 10px; padding: 4px 10px; margin: 0; }
+.tr li + li { border-top: 1px solid var(--line); }
+.tr li::before { counter-increment: step; content: counter(step); color: var(--fg-3); text-align: right; }
+.tr li.sub::before { content: counter(step) " ↳"; }
+.tr li.sub .tool { color: var(--fg-2); }
+.tool { font-weight: 600; }
+.tr .arg { white-space: pre-wrap; overflow-wrap: anywhere; }
+.tr details.tres { grid-column: 2 / -1; margin-top: 2px; }
+.tr details.tres > summary { font-family: var(--sans); font-size: 12.5px; color: var(--fg-3); padding: 2px 0; }
+.tr .tres-body { margin: 4px 0 6px; padding: 8px 10px; border: 1px solid var(--line); background: var(--bg-2); font-size: 12.5px; max-height: 60vh; overflow: auto; }
+.tr .tres-none { grid-column: 2 / -1; font-family: var(--sans); font-size: 12.5px; color: var(--fg-3); }
+
+/* file lists (changed files, loaded instructions) */
+.files { list-style: none; margin: 4px 0 0; padding: 0; font-family: var(--mono); font-size: 13px; }
+.files li { display: flex; justify-content: space-between; gap: 16px; padding: 2px 0; margin: 0; }
+.files .path { overflow-wrap: anywhere; }
+.files .fine { font-family: var(--sans); white-space: nowrap; }
+details.file { border: 1px solid var(--line); margin-top: 6px; }
+details.file > summary { display: flex; align-items: baseline; gap: 8px; padding: 6px 12px; font-family: var(--mono); font-size: 13px; background: var(--bg-2); }
+details.file > summary .path { flex: 1; overflow-wrap: anywhere; }
+details.file[open] > summary { border-bottom: 1px solid var(--line); }
+
+/* judgment input */
+.judge { margin-top: 28px; border: 1px solid var(--line-2); padding: 14px 16px 16px; }
+.judge h3 { margin: 0 0 10px; }
+.judge-opts { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.judge-opts legend { padding: 0; margin-bottom: 8px; color: var(--fg-2); font-size: 14px; }
+.judge-opts label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.judge-opts input { margin: 0; accent-color: var(--fg); }
+.judge-note { display: block; margin-top: 12px; font-size: 14px; color: var(--fg-2); }
+
+/* summary */
+.sum-table td.m { white-space: pre-wrap; overflow-wrap: anywhere; }
+.sum-table th.c { width: 90px; white-space: nowrap; }
+.sum-table th.j { width: 130px; white-space: nowrap; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 16px; }
+  .toc ol { display: flex; flex-wrap: wrap; gap: 2px 4px; }
+  .toc a { border-left: 0; border-bottom: 2px solid transparent; padding: 4px 6px; }
+  .toc a[aria-current="true"] { background: none; border-bottom-color: var(--fg); }
+  .toc .ctl { margin-top: 12px; padding-top: 12px; }
+  .content { padding: 24px 16px 80px; }
+  table.kv th { width: auto; white-space: normal; }
+}
+</style>
+</head>
+<body data-storage-key="abdiff:doc-sentence:2026-08-25T23:14:19+09:00" data-experiment="doc-sentence">
+<div class="layout">
+<nav class="toc" aria-label="Table of contents">
+  <ol>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#case-TC-01">TC-01 Retry in charge</a></li><li><a href="#case-TC-02">TC-02 Zero-amount charge</a></li>
+    <li><a href="#summary">Summary</a></li>
+    <li><a href="#change">The change</a></li>
+    <li><a href="#protocol">Fixed conditions</a></li>
+  </ol>
+  <div class="ctl">
+    <label><input type="checkbox" id="blind" checked> <span>Blind mode</span></label>
+    <button type="button" id="save-html" class="plain">Save HTML</button>
+  </div>
+</nav>
+<main class="content">
+<section class="sec" id="overview"><h1>doc-sentence</h1><p class="doc-meta">abdiff experiment report / baseline commit 5d4f8fd8d4f2</p><h2>Overview</h2><div class="scroll"><table class="kv"><tbody><tr><th>Hypothesis</th><td>Changing the retry cap in the imported spec from 3 attempts to 2 changes the constant and the test assertions in the implementation from 3 to 2.</td></tr><tr><th>Run time</th><td>2026-08-25T23:14:19+09:00 -> 2026-08-25T23:19:41+09:00</td></tr><tr><th>Claude Code</th><td>2.1.245</td></tr><tr><th>Model (observed)</th><td>claude-sonnet-5</td></tr><tr><th>N</th><td>2 per condition per test case</td></tr><tr><th>Test cases</th><td>2 (1 target, 1 control)</td></tr><tr><th>Runs</th><td>8/8 completed / 0 with timeout, error or permission denials</td></tr><tr><th>Total cost</th><td>$1.16</td></tr><tr><th>Caution</th><td><b class="warn">N=2.</b> Run-to-run variance can't be told apart from the difference between conditions, so don't read "No difference" as "no effect". Rerun with N=3 or more before drawing a conclusion.</td></tr></tbody></table></div></section><section class="sec case" id="case-TC-01" data-case="TC-01"><h2><span class="cid">TC-01</span> Retry in charge<span class="case-kind">target</span></h2><div class="field"><div class="lbl">Prompt</div><pre class="block">Make charge in src/payment.js retry when the payment request fails. Add tests.</pre></div><div class="field"><div class="lbl">Expected effect (written before the run)</div><p>Baseline: max 3 attempts (a constant = 3 or calls.length 3 in tests). Variant: max 2 attempts. Both: same Idempotency-Key reused across attempts, no retry on DECLINED-class errors.</p></div><details class="pair" open><summary><span class="pair-title">run 1</span><span class="pair-sums"><span class="pair-sum" data-arm="base"><span class="arm-label" data-arm="base">baseline</span> 9 turns / 67s / 8 tool calls / 2 files changed</span><span class="pair-sum" data-arm="var"><span class="arm-label" data-arm="var">variant</span> 8 turns / 52s / 7 tool calls / 2 files changed</span></span></summary><div class="pair-body"><details class="run" data-arm="base" open><summary><span class="arm-label" data-arm="base">baseline</span><span class="run-sum">9 turns / 67s / 8 tool calls / 2 files changed</span></summary><div class="run-section"><div class="lbl">Final response</div><pre class="resp">All tests pass (22/22, no real delays since tests inject a fake `sleep`).
+
+Summary of changes in `src/payment.js`:
+- `charge` now retries transient PayKo errors (`NETWORK_ERROR`, `GATEWAY_TIMEOUT`, `PROVIDER_UNAVAILABLE`, `RATE_LIMITED`) up to 3 attempts, 2 seconds apart, per the integration contract in `docs/payment-gateway-payko.md`.
+- A single `Idempotency-Key` is generated once per `charge()` call and reused on every retry, so a retried `GATEWAY_TIMEOUT` returns the original result instead of creating a duplicate payment.
+- Declined/duplicate codes (`DECLINED`, `INSUFFICIENT_FUNDS`, `INVALID_CARD`, `FRAUD_SUSPECTED`, `DUPLICATE_ORDER`) and non-`GatewayError` failures are never retried.
+- Added an optional `sleep` injection point (defaults to real `setTimeout`) so tests can verify retry/backoff behavior without waiting.
+
+Added tests in `test/payment.test.js` covering: idempotency header presence, successful retry after transient errors, key reuse across retries, exhausting all 3 attempts, no retry on declined/duplicate errors, and rate-limit retry.</pre></div><div class="run-section"><details class="trace"><summary>Trace / 8 tool calls</summary><ol class="tr"><li><span class="tool">Read</span><span class="arg">src/payment.js</span><details class="tres"><summary>result / 745 chars</summary><pre class="tres-body">1	export class GatewayError extends Error {
+2	  constructor(code, message) {
+3	    super(message ?? code)
+4	    this.name = &#x27;GatewayError&#x27;
+5	    this.code = code
+6	  }
+7	}
+8	
+9	// PayKo payment request.
+10	// gateway.request({ path, headers, body }) returns { status, paymentKey } or throws GatewayError.
+11	export async function charge(gateway, { orderId, amount, method = &#x27;card&#x27; }) {
+12	  if (!Number.isInteger(amount) || amount &lt;= 0) {
+13	    throw new RangeError(&#x27;amount must be a positive integer (KRW)&#x27;)
+14	  }
+15	  const res = await gateway.request({
+16	    path: &#x27;/v1/payments&#x27;,
+17	    headers: {},
+18	    body: { orderId, amount, currency: &#x27;KRW&#x27;, method },
+19	  })
+20	  return { status: res.status, paymentKey: res.paymentKey }
+21	}
+22	</pre></details></li><li><span class="tool">Bash</span><span class="arg">find <worktree> -iname &quot;*test*&quot; -not -path &quot;*/node_modules/*&quot;</span><details class="tres"><summary>result / 731 chars</summary><pre class="tres-body"><worktree>/test
+<worktree>/test/plans.test.js
+<worktree>/test/payment.test.js
+<worktree>/test/proration.test.js
+<worktree>/test/coupons.test.js
+<worktree>/test/invoice.test.js
+<worktree>/test/format.test.js</pre></details></li><li><span class="tool">Read</span><span class="arg">test/payment.test.js</span><details class="tres"><summary>result / 1,143 chars</summary><pre class="tres-body">1	import { test } from &#x27;node:test&#x27;
+2	import assert from &#x27;node:assert/strict&#x27;
+3	import { charge, GatewayError } from &#x27;../src/payment.js&#x27;
+4	
+5	function fakeGateway(handler) {
+6	  const calls = []
+7	  return {
+8	    calls,
+9	    async request(req) {
+10	      calls.push(req)
+11	      return handler(req, calls.length)
+12	    },
+13	  }
+14	}
+15	
+16	test(&#x27;charge sends KRW amount and returns status&#x27;, async () =&gt; {
+17	  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_1&#x27; }))
+18	  const res = await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 108900 })
+19	  assert.equal(res.status, &#x27;DONE&#x27;)
+20	  assert.equal(gw.calls[0].body.currency, &#x27;KRW&#x27;)
+21	})
+22	
+23	test(&#x27;charge rejects non-integer amount&#x27;, async () =&gt; {
+24	  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27; }))
+25	  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 100.5 }), RangeError)
+26	})
+27	
+28	test(&#x27;charge propagates gateway errors&#x27;, async () =&gt; {
+29	  const gw = fakeGateway(() =&gt; {
+30	    throw new GatewayError(&#x27;DECLINED&#x27;, &#x27;card declined&#x27;)
+31	  })
+32	  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }), (e) =&gt; e.code === &#x27;DECLINED&#x27;)
+33	})
+34	</pre></details></li><li><span class="tool">Bash</span><span class="arg">grep -rn &quot;randomUUID\|crypto\|Idempotency&quot; <worktree>/src</span><details class="tres"><summary>result / 31 chars</summary><pre class="tres-body">(Bash completed with no output)</pre></details></li><li><span class="tool">Bash</span><span class="arg">ls <worktree>/src; echo ---; cat <worktree>/package.json</span><details class="tres"><summary>result / 216 chars</summary><pre class="tres-body">coupons.js
+dates.js
+format.js
+invoice.js
+payment.js
+plans.js
+proration.js
+---
+{
+  &quot;name&quot;: &quot;workhub-billing&quot;,
+  &quot;version&quot;: &quot;0.4.2&quot;,
+  &quot;private&quot;: true,
+  &quot;type&quot;: &quot;module&quot;,
+  &quot;scripts&quot;: {
+    &quot;test&quot;: &quot;node --test&quot;
+  }
+}</pre></details></li><li><span class="tool">Edit</span><span class="arg">src/payment.js</span><details class="tres"><summary>result / 206 chars</summary><pre class="tres-body">The file <worktree>/src/payment.js has been updated successfully. (file state is current in your context — no need to Read it back)</pre></details></li><li><span class="tool">Edit</span><span class="arg">test/payment.test.js</span><details class="tres"><summary>result / 212 chars</summary><pre class="tres-body">The file <worktree>/test/payment.test.js has been updated successfully. (file state is current in your context — no need to Read it back)</pre></details></li><li><span class="tool">Bash</span><span class="arg">npm test 2&gt;&amp;1 | tail -60</span><details class="tres"><summary>result / 1,347 chars</summary><pre class="tres-body">&gt; workhub-billing@0.4.2 test
+&gt; node --test
+
+✔ percent coupon (1.71725ms)
+✔ fixed coupon never goes below zero (0.075042ms)
+✔ formatKRW adds thousands separators (16.953833ms)
+✔ createInvoice sums lines and adds VAT (1.577958ms)
+✔ createInvoice truncates VAT below 1 KRW (0.341208ms)
+✔ charge sends KRW amount and returns status (1.070083ms)
+✔ charge rejects non-integer amount (0.244833ms)
+✔ charge propagates gateway errors (0.995208ms)
+✔ charge sets an idempotency key on the request (0.363542ms)
+✔ charge retries a transient error and returns the eventual success (0.93975ms)
+✔ charge retries reuse the same idempotency key (0.134208ms)
+✔ charge stops after 3 attempts and throws the last error (0.38025ms)
+✔ charge does not retry a declined payment (0.102417ms)
+✔ charge does not retry a duplicate order (0.125334ms)
+✔ charge retries a rate-limited request (0.153125ms)
+✔ findPlan returns the plan by id (1.434625ms)
+✔ findPlan throws on unknown id (0.418917ms)
+✔ plan ids are unique (0.315833ms)
+✔ cycleBounds: anchor before the date (4.292083ms)
+✔ cycleBounds: anchor after the date goes to previous month (0.223958ms)
+✔ cycleBounds rejects anchor outside 1..28 (0.296875ms)
+✔ prorate: remaining days over cycle days, truncated (0.103875ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 159.203791</pre></details></li></ol></details></div><div class="run-section"><details class="instr"><summary>Instruction files loaded: 2</summary><ul class="files"><li><span class="path">CLAUDE.md</span><span class="fine">Project / session_start</span></li><li><span class="path">docs/payment-gateway-payko.md</span><span class="fine">Project / include</span></li></ul></details></div><div class="run-section"><div class="lbl">Changed files: 2 / <span class="stat"><span class="add">+102</span> <span class="del">-7</span></span></div><details class="file"><summary><span class="path">src/payment.js</span><span class="stat"><span class="add">+32</span> <span class="del">-7</span></span></summary><div class="diff"><span class="dl meta">index 67abef9..42ce8f0 100644</span><span class="dl meta">--- a/src/payment.js</span><span class="dl meta">+++ b/src/payment.js</span><span class="dl hunk">@@ -1,3 +1,5 @@</span><span class="dl add">+import { randomUUID } from &#x27;node:crypto&#x27;</span><span class="dl add">+</span><span class="dl ctx"> export class GatewayError extends Error {</span><span class="dl ctx">   constructor(code, message) {</span><span class="dl ctx">     super(message ?? code)</span><span class="dl hunk">@@ -6,16 +8,39 @@ export class GatewayError extends Error {</span><span class="dl ctx">   }</span><span class="dl ctx"> }</span><span class="dl ctx"> </span><span class="dl add">+// Transient PayKo error codes worth retrying. Declined/duplicate codes are never retried</span><span class="dl add">+// (see docs/payment-gateway-payko.md #2.2) — retrying those trips card-network fraud detection.</span><span class="dl add">+const RETRYABLE_CODES = new Set([&#x27;NETWORK_ERROR&#x27;, &#x27;GATEWAY_TIMEOUT&#x27;, &#x27;PROVIDER_UNAVAILABLE&#x27;, &#x27;RATE_LIMITED&#x27;])</span><span class="dl add">+const MAX_ATTEMPTS = 3</span><span class="dl add">+const RETRY_DELAY_MS = 2000</span><span class="dl add">+</span><span class="dl add">+function defaultSleep(ms) {</span><span class="dl add">+  return new Promise((resolve) =&gt; setTimeout(resolve, ms))</span><span class="dl add">+}</span><span class="dl add">+</span><span class="dl ctx"> // PayKo payment request.</span><span class="dl ctx"> // gateway.request({ path, headers, body }) returns { status, paymentKey } or throws GatewayError.</span><span class="dl del">-export async function charge(gateway, { orderId, amount, method = &#x27;card&#x27; }) {</span><span class="dl add">+// Transient failures are retried up to 3 attempts, 2 seconds apart, reusing the same idempotency</span><span class="dl add">+// key on every attempt so PayKo returns the original result instead of creating a duplicate payment.</span><span class="dl add">+export async function charge(gateway, { orderId, amount, method = &#x27;card&#x27; }, { sleep = defaultSleep } = {}) {</span><span class="dl ctx">   if (!Number.isInteger(amount) || amount &lt;= 0) {</span><span class="dl ctx">     throw new RangeError(&#x27;amount must be a positive integer (KRW)&#x27;)</span><span class="dl ctx">   }</span><span class="dl del">-  const res = await gateway.request({</span><span class="dl del">-    path: &#x27;/v1/payments&#x27;,</span><span class="dl del">-    headers: {},</span><span class="dl del">-    body: { orderId, amount, currency: &#x27;KRW&#x27;, method },</span><span class="dl del">-  })</span><span class="dl del">-  return { status: res.status, paymentKey: res.paymentKey }</span><span class="dl add">+  const idempotencyKey = randomUUID()</span><span class="dl add">+  for (let attempt = 1; attempt &lt;= MAX_ATTEMPTS; attempt++) {</span><span class="dl add">+    try {</span><span class="dl add">+      const res = await gateway.request({</span><span class="dl add">+        path: &#x27;/v1/payments&#x27;,</span><span class="dl add">+        headers: { &#x27;Idempotency-Key&#x27;: idempotencyKey },</span><span class="dl add">+        body: { orderId, amount, currency: &#x27;KRW&#x27;, method },</span><span class="dl add">+      })</span><span class="dl add">+      return { status: res.status, paymentKey: res.paymentKey }</span><span class="dl add">+    } catch (err) {</span><span class="dl add">+      const retryable = err instanceof GatewayError &amp;&amp; RETRYABLE_CODES.has(err.code)</span><span class="dl add">+      if (!retryable || attempt === MAX_ATTEMPTS) {</span><span class="dl add">+        throw err</span><span class="dl add">+      }</span><span class="dl add">+      await sleep(RETRY_DELAY_MS)</span><span class="dl add">+    }</span><span class="dl add">+  }</span><span class="dl ctx"> }</span></div></details><details class="file"><summary><span class="path">test/payment.test.js</span><span class="stat"><span class="add">+70</span> <span class="del">-0</span></span></summary><div class="diff"><span class="dl meta">index 5fe9944..c398fb5 100644</span><span class="dl meta">--- a/test/payment.test.js</span><span class="dl meta">+++ b/test/payment.test.js</span><span class="dl hunk">@@ -31,3 +31,73 @@ test(&#x27;charge propagates gateway errors&#x27;, async () =&gt; {</span><span class="dl ctx">   })</span><span class="dl ctx">   await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }), (e) =&gt; e.code === &#x27;DECLINED&#x27;)</span><span class="dl ctx"> })</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge sets an idempotency key on the request&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_1&#x27; }))</span><span class="dl add">+  await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 })</span><span class="dl add">+  assert.ok(gw.calls[0].headers[&#x27;Idempotency-Key&#x27;])</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge retries a transient error and returns the eventual success&#x27;, async () =&gt; {</span><span class="dl add">+  const sleeps = []</span><span class="dl add">+  const gw = fakeGateway((req, n) =&gt; {</span><span class="dl add">+    if (n &lt; 3) throw new GatewayError(&#x27;GATEWAY_TIMEOUT&#x27;, &#x27;no response from card network&#x27;)</span><span class="dl add">+    return { status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_1&#x27; }</span><span class="dl add">+  })</span><span class="dl add">+  const res = await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }, { sleep: async (ms) =&gt; sleeps.push(ms) })</span><span class="dl add">+  assert.equal(res.status, &#x27;DONE&#x27;)</span><span class="dl add">+  assert.equal(gw.calls.length, 3)</span><span class="dl add">+  assert.deepEqual(sleeps, [2000, 2000])</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge retries reuse the same idempotency key&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway((req, n) =&gt; {</span><span class="dl add">+    if (n &lt; 2) throw new GatewayError(&#x27;NETWORK_ERROR&#x27;, &#x27;connection failed&#x27;)</span><span class="dl add">+    return { status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_1&#x27; }</span><span class="dl add">+  })</span><span class="dl add">+  await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }, { sleep: async () =&gt; {} })</span><span class="dl add">+  const keys = gw.calls.map((c) =&gt; c.headers[&#x27;Idempotency-Key&#x27;])</span><span class="dl add">+  assert.equal(keys[0], keys[1])</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge stops after 3 attempts and throws the last error&#x27;, async () =&gt; {</span><span class="dl add">+  const sleeps = []</span><span class="dl add">+  const gw = fakeGateway(() =&gt; {</span><span class="dl add">+    throw new GatewayError(&#x27;PROVIDER_UNAVAILABLE&#x27;, &#x27;card network maintenance&#x27;)</span><span class="dl add">+  })</span><span class="dl add">+  await assert.rejects(</span><span class="dl add">+    charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }, { sleep: async (ms) =&gt; sleeps.push(ms) }),</span><span class="dl add">+    (e) =&gt; e.code === &#x27;PROVIDER_UNAVAILABLE&#x27;,</span><span class="dl add">+  )</span><span class="dl add">+  assert.equal(gw.calls.length, 3)</span><span class="dl add">+  assert.deepEqual(sleeps, [2000, 2000])</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge does not retry a declined payment&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway(() =&gt; {</span><span class="dl add">+    throw new GatewayError(&#x27;DECLINED&#x27;, &#x27;card declined&#x27;)</span><span class="dl add">+  })</span><span class="dl add">+  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }, { sleep: async () =&gt; {</span><span class="dl add">+    throw new Error(&#x27;should not sleep/retry after a decline&#x27;)</span><span class="dl add">+  } }))</span><span class="dl add">+  assert.equal(gw.calls.length, 1)</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge does not retry a duplicate order&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway(() =&gt; {</span><span class="dl add">+    throw new GatewayError(&#x27;DUPLICATE_ORDER&#x27;, &#x27;payment already done&#x27;)</span><span class="dl add">+  })</span><span class="dl add">+  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }))</span><span class="dl add">+  assert.equal(gw.calls.length, 1)</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge retries a rate-limited request&#x27;, async () =&gt; {</span><span class="dl add">+  const sleeps = []</span><span class="dl add">+  const gw = fakeGateway((req, n) =&gt; {</span><span class="dl add">+    if (n &lt; 2) throw new GatewayError(&#x27;RATE_LIMITED&#x27;, &#x27;too many requests&#x27;)</span><span class="dl add">+    return { status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_1&#x27; }</span><span class="dl add">+  })</span><span class="dl add">+  const res = await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }, { sleep: async (ms) =&gt; sleeps.push(ms) })</span><span class="dl add">+  assert.equal(res.status, &#x27;DONE&#x27;)</span><span class="dl add">+  assert.deepEqual(sleeps, [2000])</span><span class="dl add">+})</span></div></details></div><p class="run-meta">exit 0</p></details><details class="run" data-arm="var" open><summary><span class="arm-label" data-arm="var">variant</span><span class="run-sum">8 turns / 52s / 7 tool calls / 2 files changed</span></summary><div class="run-section"><div class="lbl">Final response</div><pre class="resp">All tests pass (20/20).
+
+Summary: `charge` in `src/payment.js` now retries transient/limit errors (`NETWORK_ERROR`, `GATEWAY_TIMEOUT`, `PROVIDER_UNAVAILABLE`, `RATE_LIMITED`) up to 2 attempts total, reusing a single `Idempotency-Key` across attempts, and never retries declined/duplicate codes — matching the PayKo contract in `docs/payment-gateway-payko.md`. Added a `retryDelayMs` option (default 2000ms, per the &quot;≥2s apart&quot; rule; overridable for tests) and 5 new tests covering retry-then-success, idempotency key reuse, max-attempts exhaustion, and no-retry on `FRAUD_SUSPECTED`/`DUPLICATE_ORDER`.</pre></div><div class="run-section"><details class="trace"><summary>Trace / 7 tool calls</summary><ol class="tr"><li><span class="tool">Read</span><span class="arg">src/payment.js</span><details class="tres"><summary>result / 745 chars</summary><pre class="tres-body">1	export class GatewayError extends Error {
+2	  constructor(code, message) {
+3	    super(message ?? code)
+4	    this.name = &#x27;GatewayError&#x27;
+5	    this.code = code
+6	  }
+7	}
+8	
+9	// PayKo payment request.
+10	// gateway.request({ path, headers, body }) returns { status, paymentKey } or throws GatewayError.
+11	export async function charge(gateway, { orderId, amount, method = &#x27;card&#x27; }) {
+12	  if (!Number.isInteger(amount) || amount &lt;= 0) {
+13	    throw new RangeError(&#x27;amount must be a positive integer (KRW)&#x27;)
+14	  }
+15	  const res = await gateway.request({
+16	    path: &#x27;/v1/payments&#x27;,
+17	    headers: {},
+18	    body: { orderId, amount, currency: &#x27;KRW&#x27;, method },
+19	  })
+20	  return { status: res.status, paymentKey: res.paymentKey }
+21	}
+22	</pre></details></li><li><span class="tool">Bash</span><span class="arg">find . -path ./node_modules -prune -o -iname &quot;*payment*&quot; -print</span><details class="tres"><summary>result / 71 chars</summary><pre class="tres-body">./test/payment.test.js
+./docs/payment-gateway-payko.md
+./src/payment.js</pre></details></li><li><span class="tool">Read</span><span class="arg">test/payment.test.js</span><details class="tres"><summary>result / 1,143 chars</summary><pre class="tres-body">1	import { test } from &#x27;node:test&#x27;
+2	import assert from &#x27;node:assert/strict&#x27;
+3	import { charge, GatewayError } from &#x27;../src/payment.js&#x27;
+4	
+5	function fakeGateway(handler) {
+6	  const calls = []
+7	  return {
+8	    calls,
+9	    async request(req) {
+10	      calls.push(req)
+11	      return handler(req, calls.length)
+12	    },
+13	  }
+14	}
+15	
+16	test(&#x27;charge sends KRW amount and returns status&#x27;, async () =&gt; {
+17	  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_1&#x27; }))
+18	  const res = await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 108900 })
+19	  assert.equal(res.status, &#x27;DONE&#x27;)
+20	  assert.equal(gw.calls[0].body.currency, &#x27;KRW&#x27;)
+21	})
+22	
+23	test(&#x27;charge rejects non-integer amount&#x27;, async () =&gt; {
+24	  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27; }))
+25	  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 100.5 }), RangeError)
+26	})
+27	
+28	test(&#x27;charge propagates gateway errors&#x27;, async () =&gt; {
+29	  const gw = fakeGateway(() =&gt; {
+30	    throw new GatewayError(&#x27;DECLINED&#x27;, &#x27;card declined&#x27;)
+31	  })
+32	  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }), (e) =&gt; e.code === &#x27;DECLINED&#x27;)
+33	})
+34	</pre></details></li><li><span class="tool">Edit</span><span class="arg">src/payment.js</span><details class="tres"><summary>result / 206 chars</summary><pre class="tres-body">The file <worktree>/src/payment.js has been updated successfully. (file state is current in your context — no need to Read it back)</pre></details></li><li><span class="tool">Edit</span><span class="arg">src/payment.js</span><details class="tres"><summary>result / 206 chars</summary><pre class="tres-body">The file <worktree>/src/payment.js has been updated successfully. (file state is current in your context — no need to Read it back)</pre></details></li><li><span class="tool">Edit</span><span class="arg">test/payment.test.js</span><details class="tres"><summary>result / 212 chars</summary><pre class="tres-body">The file <worktree>/test/payment.test.js has been updated successfully. (file state is current in your context — no need to Read it back)</pre></details></li><li><span class="tool">Bash</span><span class="arg">npm test 2&gt;&amp;1 | tail -60</span><details class="tres"><summary>result / 1,247 chars</summary><pre class="tres-body">&gt; workhub-billing@0.4.2 test
+&gt; node --test
+
+✔ percent coupon (1.5325ms)
+✔ fixed coupon never goes below zero (0.086125ms)
+✔ formatKRW adds thousands separators (12.348416ms)
+✔ createInvoice sums lines and adds VAT (0.736666ms)
+✔ createInvoice truncates VAT below 1 KRW (0.0825ms)
+✔ charge sends KRW amount and returns status (0.880292ms)
+✔ charge rejects non-integer amount (0.244083ms)
+✔ charge propagates gateway errors (0.918958ms)
+✔ charge retries once on a transient error and returns the retried result (2.707333ms)
+✔ charge reuses the same Idempotency-Key across retries (1.683041ms)
+✔ charge stops after 2 attempts and throws the last transient error (1.463916ms)
+✔ charge never retries declined codes (0.115292ms)
+✔ charge never retries DUPLICATE_ORDER (0.07375ms)
+✔ findPlan returns the plan by id (0.747166ms)
+✔ findPlan throws on unknown id (0.173917ms)
+✔ plan ids are unique (0.049333ms)
+✔ cycleBounds: anchor before the date (3.495042ms)
+✔ cycleBounds: anchor after the date goes to previous month (0.104167ms)
+✔ cycleBounds rejects anchor outside 1..28 (0.178083ms)
+✔ prorate: remaining days over cycle days, truncated (0.079042ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 110.125958</pre></details></li></ol></details></div><div class="run-section"><details class="instr"><summary>Instruction files loaded: 2</summary><ul class="files"><li><span class="path">CLAUDE.md</span><span class="fine">Project / session_start</span></li><li><span class="path">docs/payment-gateway-payko.md</span><span class="fine">Project / include</span></li></ul></details></div><div class="run-section"><div class="lbl">Changed files: 2 / <span class="stat"><span class="add">+80</span> <span class="del">-7</span></span></div><details class="file"><summary><span class="path">src/payment.js</span><span class="stat"><span class="add">+32</span> <span class="del">-7</span></span></summary><div class="diff"><span class="dl meta">index 67abef9..f7b6c0d 100644</span><span class="dl meta">--- a/src/payment.js</span><span class="dl meta">+++ b/src/payment.js</span><span class="dl hunk">@@ -1,3 +1,5 @@</span><span class="dl add">+import { randomUUID } from &#x27;node:crypto&#x27;</span><span class="dl add">+</span><span class="dl ctx"> export class GatewayError extends Error {</span><span class="dl ctx">   constructor(code, message) {</span><span class="dl ctx">     super(message ?? code)</span><span class="dl hunk">@@ -6,16 +8,39 @@ export class GatewayError extends Error {</span><span class="dl ctx">   }</span><span class="dl ctx"> }</span><span class="dl ctx"> </span><span class="dl add">+// Transient/limit codes only. Declined and duplicate codes must never be retried</span><span class="dl add">+// (see docs/payment-gateway-payko.md section 2.2 - retrying those trips PayKo&#x27;s fraud detection).</span><span class="dl add">+const RETRYABLE_CODES = new Set([&#x27;NETWORK_ERROR&#x27;, &#x27;GATEWAY_TIMEOUT&#x27;, &#x27;PROVIDER_UNAVAILABLE&#x27;, &#x27;RATE_LIMITED&#x27;])</span><span class="dl add">+const MAX_ATTEMPTS = 2</span><span class="dl add">+const RETRY_DELAY_MS = 2000</span><span class="dl add">+</span><span class="dl add">+function sleep(ms) {</span><span class="dl add">+  return new Promise((resolve) =&gt; setTimeout(resolve, ms))</span><span class="dl add">+}</span><span class="dl add">+</span><span class="dl ctx"> // PayKo payment request.</span><span class="dl ctx"> // gateway.request({ path, headers, body }) returns { status, paymentKey } or throws GatewayError.</span><span class="dl del">-export async function charge(gateway, { orderId, amount, method = &#x27;card&#x27; }) {</span><span class="dl add">+// Retries transient failures up to MAX_ATTEMPTS, reusing the same Idempotency-Key so a retry</span><span class="dl add">+// resolves to the original attempt&#x27;s result instead of creating a second payment.</span><span class="dl add">+export async function charge(gateway, { orderId, amount, method = &#x27;card&#x27; }, { retryDelayMs = RETRY_DELAY_MS } = {}) {</span><span class="dl ctx">   if (!Number.isInteger(amount) || amount &lt;= 0) {</span><span class="dl ctx">     throw new RangeError(&#x27;amount must be a positive integer (KRW)&#x27;)</span><span class="dl ctx">   }</span><span class="dl del">-  const res = await gateway.request({</span><span class="dl del">-    path: &#x27;/v1/payments&#x27;,</span><span class="dl del">-    headers: {},</span><span class="dl del">-    body: { orderId, amount, currency: &#x27;KRW&#x27;, method },</span><span class="dl del">-  })</span><span class="dl del">-  return { status: res.status, paymentKey: res.paymentKey }</span><span class="dl add">+  const idempotencyKey = randomUUID()</span><span class="dl add">+  for (let attempt = 1; attempt &lt;= MAX_ATTEMPTS; attempt++) {</span><span class="dl add">+    try {</span><span class="dl add">+      const res = await gateway.request({</span><span class="dl add">+        path: &#x27;/v1/payments&#x27;,</span><span class="dl add">+        headers: { &#x27;Idempotency-Key&#x27;: idempotencyKey },</span><span class="dl add">+        body: { orderId, amount, currency: &#x27;KRW&#x27;, method },</span><span class="dl add">+      })</span><span class="dl add">+      return { status: res.status, paymentKey: res.paymentKey }</span><span class="dl add">+    } catch (err) {</span><span class="dl add">+      const retryable = err instanceof GatewayError &amp;&amp; RETRYABLE_CODES.has(err.code)</span><span class="dl add">+      if (!retryable || attempt === MAX_ATTEMPTS) {</span><span class="dl add">+        throw err</span><span class="dl add">+      }</span><span class="dl add">+      await sleep(retryDelayMs)</span><span class="dl add">+    }</span><span class="dl add">+  }</span><span class="dl ctx"> }</span></div></details><details class="file"><summary><span class="path">test/payment.test.js</span><span class="stat"><span class="add">+48</span> <span class="del">-0</span></span></summary><div class="diff"><span class="dl meta">index 5fe9944..0629b58 100644</span><span class="dl meta">--- a/test/payment.test.js</span><span class="dl meta">+++ b/test/payment.test.js</span><span class="dl hunk">@@ -31,3 +31,51 @@ test(&#x27;charge propagates gateway errors&#x27;, async () =&gt; {</span><span class="dl ctx">   })</span><span class="dl ctx">   await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }), (e) =&gt; e.code === &#x27;DECLINED&#x27;)</span><span class="dl ctx"> })</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge retries once on a transient error and returns the retried result&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway((req, callCount) =&gt; {</span><span class="dl add">+    if (callCount === 1) throw new GatewayError(&#x27;GATEWAY_TIMEOUT&#x27;, &#x27;no response from card network&#x27;)</span><span class="dl add">+    return { status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_retry&#x27; }</span><span class="dl add">+  })</span><span class="dl add">+  const res = await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }, { retryDelayMs: 0 })</span><span class="dl add">+  assert.equal(res.status, &#x27;DONE&#x27;)</span><span class="dl add">+  assert.equal(gw.calls.length, 2)</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge reuses the same Idempotency-Key across retries&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway((req, callCount) =&gt; {</span><span class="dl add">+    if (callCount === 1) throw new GatewayError(&#x27;NETWORK_ERROR&#x27;, &#x27;connection failed&#x27;)</span><span class="dl add">+    return { status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_retry&#x27; }</span><span class="dl add">+  })</span><span class="dl add">+  await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }, { retryDelayMs: 0 })</span><span class="dl add">+  assert.equal(gw.calls.length, 2)</span><span class="dl add">+  assert.ok(gw.calls[0].headers[&#x27;Idempotency-Key&#x27;])</span><span class="dl add">+  assert.equal(gw.calls[0].headers[&#x27;Idempotency-Key&#x27;], gw.calls[1].headers[&#x27;Idempotency-Key&#x27;])</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge stops after 2 attempts and throws the last transient error&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway(() =&gt; {</span><span class="dl add">+    throw new GatewayError(&#x27;PROVIDER_UNAVAILABLE&#x27;, &#x27;card network maintenance&#x27;)</span><span class="dl add">+  })</span><span class="dl add">+  await assert.rejects(</span><span class="dl add">+    charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }, { retryDelayMs: 0 }),</span><span class="dl add">+    (e) =&gt; e.code === &#x27;PROVIDER_UNAVAILABLE&#x27;,</span><span class="dl add">+  )</span><span class="dl add">+  assert.equal(gw.calls.length, 2)</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge never retries declined codes&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway(() =&gt; {</span><span class="dl add">+    throw new GatewayError(&#x27;FRAUD_SUSPECTED&#x27;, &#x27;flagged by fraud detection&#x27;)</span><span class="dl add">+  })</span><span class="dl add">+  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }, { retryDelayMs: 0 }), (e) =&gt; e.code === &#x27;FRAUD_SUSPECTED&#x27;)</span><span class="dl add">+  assert.equal(gw.calls.length, 1)</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge never retries DUPLICATE_ORDER&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway(() =&gt; {</span><span class="dl add">+    throw new GatewayError(&#x27;DUPLICATE_ORDER&#x27;, &#x27;already done&#x27;)</span><span class="dl add">+  })</span><span class="dl add">+  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }, { retryDelayMs: 0 }), (e) =&gt; e.code === &#x27;DUPLICATE_ORDER&#x27;)</span><span class="dl add">+  assert.equal(gw.calls.length, 1)</span><span class="dl add">+})</span></div></details></div><p class="run-meta">exit 0</p></details></div></details><details class="pair"><summary><span class="pair-title">run 2</span><span class="pair-sums"><span class="pair-sum" data-arm="base"><span class="arm-label" data-arm="base">baseline</span> 8 turns / 54s / 7 tool calls / 2 files changed</span><span class="pair-sum" data-arm="var"><span class="arm-label" data-arm="var">variant</span> 7 turns / 56s / 6 tool calls / 2 files changed</span></span></summary><div class="pair-body"><details class="run" data-arm="base" open><summary><span class="arm-label" data-arm="base">baseline</span><span class="run-sum">8 turns / 54s / 7 tool calls / 2 files changed</span></summary><div class="run-section"><div class="lbl">Final response</div><pre class="resp">All 22 tests pass, including the 8 new ones for retry behavior.
+
+Summary of changes to `src/payment.js`:
+- Retries only transient/rate-limit errors (`NETWORK_ERROR`, `GATEWAY_TIMEOUT`, `PROVIDER_UNAVAILABLE`, `RATE_LIMITED`); declined and duplicate-order errors are never retried, per the PayKo contract.
+- Caps at 3 attempts, 2 seconds apart, matching the PayKo integration guide (beyond that you get `RATE_LIMITED`).
+- Generates one `Idempotency-Key` per `charge()` call and reuses it across all retries of that payment, so a retried request can&#x27;t create a duplicate charge (this was the cause of INC-2024-03).
+- Added a `sleep` injection point (`charge(gateway, params, { sleep })`) so tests don&#x27;t have to wait on real timers.
+
+Tests added in `test/payment.test.js` cover: retry-then-succeed, exhausting all 3 attempts, never retrying `DECLINED`/`DUPLICATE_ORDER`, retrying `RATE_LIMITED`, idempotency key reuse across retries, and a fresh key per separate `charge()` call.</pre></div><div class="run-section"><details class="trace"><summary>Trace / 7 tool calls</summary><ol class="tr"><li><span class="tool">Read</span><span class="arg">src/payment.js</span><details class="tres"><summary>result / 745 chars</summary><pre class="tres-body">1	export class GatewayError extends Error {
+2	  constructor(code, message) {
+3	    super(message ?? code)
+4	    this.name = &#x27;GatewayError&#x27;
+5	    this.code = code
+6	  }
+7	}
+8	
+9	// PayKo payment request.
+10	// gateway.request({ path, headers, body }) returns { status, paymentKey } or throws GatewayError.
+11	export async function charge(gateway, { orderId, amount, method = &#x27;card&#x27; }) {
+12	  if (!Number.isInteger(amount) || amount &lt;= 0) {
+13	    throw new RangeError(&#x27;amount must be a positive integer (KRW)&#x27;)
+14	  }
+15	  const res = await gateway.request({
+16	    path: &#x27;/v1/payments&#x27;,
+17	    headers: {},
+18	    body: { orderId, amount, currency: &#x27;KRW&#x27;, method },
+19	  })
+20	  return { status: res.status, paymentKey: res.paymentKey }
+21	}
+22	</pre></details></li><li><span class="tool">Bash</span><span class="arg">find . -path ./node_modules -prune -o -iname &quot;*payment*&quot; -print</span><details class="tres"><summary>result / 71 chars</summary><pre class="tres-body">./test/payment.test.js
+./docs/payment-gateway-payko.md
+./src/payment.js</pre></details></li><li><span class="tool">Read</span><span class="arg">test/payment.test.js</span><details class="tres"><summary>result / 1,143 chars</summary><pre class="tres-body">1	import { test } from &#x27;node:test&#x27;
+2	import assert from &#x27;node:assert/strict&#x27;
+3	import { charge, GatewayError } from &#x27;../src/payment.js&#x27;
+4	
+5	function fakeGateway(handler) {
+6	  const calls = []
+7	  return {
+8	    calls,
+9	    async request(req) {
+10	      calls.push(req)
+11	      return handler(req, calls.length)
+12	    },
+13	  }
+14	}
+15	
+16	test(&#x27;charge sends KRW amount and returns status&#x27;, async () =&gt; {
+17	  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_1&#x27; }))
+18	  const res = await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 108900 })
+19	  assert.equal(res.status, &#x27;DONE&#x27;)
+20	  assert.equal(gw.calls[0].body.currency, &#x27;KRW&#x27;)
+21	})
+22	
+23	test(&#x27;charge rejects non-integer amount&#x27;, async () =&gt; {
+24	  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27; }))
+25	  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 100.5 }), RangeError)
+26	})
+27	
+28	test(&#x27;charge propagates gateway errors&#x27;, async () =&gt; {
+29	  const gw = fakeGateway(() =&gt; {
+30	    throw new GatewayError(&#x27;DECLINED&#x27;, &#x27;card declined&#x27;)
+31	  })
+32	  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }), (e) =&gt; e.code === &#x27;DECLINED&#x27;)
+33	})
+34	</pre></details></li><li><span class="tool">Bash</span><span class="arg">ls src test; echo &quot;---&quot;; grep -rl &quot;setTimeout\|retry\|Retry&quot; src test 2&gt;/dev/null</span><details class="tres"><summary>result / 184 chars</summary><pre class="tres-body">src:
+coupons.js
+dates.js
+format.js
+invoice.js
+payment.js
+plans.js
+proration.js
+
+test:
+coupons.test.js
+format.test.js
+invoice.test.js
+payment.test.js
+plans.test.js
+proration.test.js
+---</pre></details></li><li><span class="tool">Edit</span><span class="arg">src/payment.js</span><details class="tres"><summary>result / 206 chars</summary><pre class="tres-body">The file <worktree>/src/payment.js has been updated successfully. (file state is current in your context — no need to Read it back)</pre></details></li><li><span class="tool">Edit</span><span class="arg">test/payment.test.js</span><details class="tres"><summary>result / 212 chars</summary><pre class="tres-body">The file <worktree>/test/payment.test.js has been updated successfully. (file state is current in your context — no need to Read it back)</pre></details></li><li><span class="tool">Bash</span><span class="arg">npm test 2&gt;&amp;1 | tail -60</span><details class="tres"><summary>result / 1,327 chars</summary><pre class="tres-body">&gt; workhub-billing@0.4.2 test
+&gt; node --test
+
+✔ percent coupon (0.5875ms)
+✔ fixed coupon never goes below zero (0.051542ms)
+✔ formatKRW adds thousands separators (9.828834ms)
+✔ createInvoice sums lines and adds VAT (0.690375ms)
+✔ createInvoice truncates VAT below 1 KRW (0.079834ms)
+✔ charge sends KRW amount and returns status (1.01525ms)
+✔ charge rejects non-integer amount (0.230583ms)
+✔ charge propagates gateway errors (0.082375ms)
+✔ charge retries transient errors and succeeds (0.918375ms)
+✔ charge stops after 3 attempts and throws the last error (0.087ms)
+✔ charge never retries declined errors (0.063333ms)
+✔ charge never retries duplicate order errors (0.069583ms)
+✔ charge retries RATE_LIMITED (0.075209ms)
+✔ charge reuses the same idempotency key across retries (0.106667ms)
+✔ charge generates a fresh idempotency key per charge() call (0.12875ms)
+✔ findPlan returns the plan by id (0.607958ms)
+✔ findPlan throws on unknown id (0.16075ms)
+✔ plan ids are unique (0.049583ms)
+✔ cycleBounds: anchor before the date (2.0065ms)
+✔ cycleBounds: anchor after the date goes to previous month (0.075042ms)
+✔ cycleBounds rejects anchor outside 1..28 (0.162458ms)
+✔ prorate: remaining days over cycle days, truncated (0.074375ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 99.01175</pre></details></li></ol></details></div><div class="run-section"><details class="instr"><summary>Instruction files loaded: 2</summary><ul class="files"><li><span class="path">docs/payment-gateway-payko.md</span><span class="fine">Project / include</span></li><li><span class="path">CLAUDE.md</span><span class="fine">Project / session_start</span></li></ul></details></div><div class="run-section"><div class="lbl">Changed files: 2 / <span class="stat"><span class="add">+120</span> <span class="del">-7</span></span></div><details class="file"><summary><span class="path">src/payment.js</span><span class="stat"><span class="add">+35</span> <span class="del">-7</span></span></summary><div class="diff"><span class="dl meta">index 67abef9..ba2984d 100644</span><span class="dl meta">--- a/src/payment.js</span><span class="dl meta">+++ b/src/payment.js</span><span class="dl hunk">@@ -1,3 +1,5 @@</span><span class="dl add">+import { randomUUID } from &#x27;node:crypto&#x27;</span><span class="dl add">+</span><span class="dl ctx"> export class GatewayError extends Error {</span><span class="dl ctx">   constructor(code, message) {</span><span class="dl ctx">     super(message ?? code)</span><span class="dl hunk">@@ -6,16 +8,42 @@ export class GatewayError extends Error {</span><span class="dl ctx">   }</span><span class="dl ctx"> }</span><span class="dl ctx"> </span><span class="dl add">+// Per the PayKo contract (docs/payment-gateway-payko.md#2.2, #2.3): only transient/rate-limit</span><span class="dl add">+// errors are retried, declined/duplicate errors never are, and retries are capped at 3 attempts</span><span class="dl add">+// at least 2 seconds apart, all sharing one Idempotency-Key so a retry can&#x27;t double-charge.</span><span class="dl add">+const RETRYABLE_CODES = new Set([&#x27;NETWORK_ERROR&#x27;, &#x27;GATEWAY_TIMEOUT&#x27;, &#x27;PROVIDER_UNAVAILABLE&#x27;, &#x27;RATE_LIMITED&#x27;])</span><span class="dl add">+const MAX_ATTEMPTS = 3</span><span class="dl add">+const RETRY_DELAY_MS = 2000</span><span class="dl add">+</span><span class="dl add">+function defaultSleep(ms) {</span><span class="dl add">+  return new Promise((resolve) =&gt; setTimeout(resolve, ms))</span><span class="dl add">+}</span><span class="dl add">+</span><span class="dl ctx"> // PayKo payment request.</span><span class="dl ctx"> // gateway.request({ path, headers, body }) returns { status, paymentKey } or throws GatewayError.</span><span class="dl del">-export async function charge(gateway, { orderId, amount, method = &#x27;card&#x27; }) {</span><span class="dl add">+export async function charge(</span><span class="dl add">+  gateway,</span><span class="dl add">+  { orderId, amount, method = &#x27;card&#x27; },</span><span class="dl add">+  { sleep = defaultSleep } = {},</span><span class="dl add">+) {</span><span class="dl ctx">   if (!Number.isInteger(amount) || amount &lt;= 0) {</span><span class="dl ctx">     throw new RangeError(&#x27;amount must be a positive integer (KRW)&#x27;)</span><span class="dl ctx">   }</span><span class="dl del">-  const res = await gateway.request({</span><span class="dl del">-    path: &#x27;/v1/payments&#x27;,</span><span class="dl del">-    headers: {},</span><span class="dl del">-    body: { orderId, amount, currency: &#x27;KRW&#x27;, method },</span><span class="dl del">-  })</span><span class="dl del">-  return { status: res.status, paymentKey: res.paymentKey }</span><span class="dl add">+  const idempotencyKey = randomUUID()</span><span class="dl add">+  for (let attempt = 1; attempt &lt;= MAX_ATTEMPTS; attempt++) {</span><span class="dl add">+    try {</span><span class="dl add">+      const res = await gateway.request({</span><span class="dl add">+        path: &#x27;/v1/payments&#x27;,</span><span class="dl add">+        headers: { &#x27;Idempotency-Key&#x27;: idempotencyKey },</span><span class="dl add">+        body: { orderId, amount, currency: &#x27;KRW&#x27;, method },</span><span class="dl add">+      })</span><span class="dl add">+      return { status: res.status, paymentKey: res.paymentKey }</span><span class="dl add">+    } catch (err) {</span><span class="dl add">+      const retryable = err instanceof GatewayError &amp;&amp; RETRYABLE_CODES.has(err.code)</span><span class="dl add">+      if (!retryable || attempt === MAX_ATTEMPTS) {</span><span class="dl add">+        throw err</span><span class="dl add">+      }</span><span class="dl add">+      await sleep(RETRY_DELAY_MS)</span><span class="dl add">+    }</span><span class="dl add">+  }</span><span class="dl ctx"> }</span></div></details><details class="file"><summary><span class="path">test/payment.test.js</span><span class="stat"><span class="add">+85</span> <span class="del">-0</span></span></summary><div class="diff"><span class="dl meta">index 5fe9944..61236e5 100644</span><span class="dl meta">--- a/test/payment.test.js</span><span class="dl meta">+++ b/test/payment.test.js</span><span class="dl hunk">@@ -31,3 +31,88 @@ test(&#x27;charge propagates gateway errors&#x27;, async () =&gt; {</span><span class="dl ctx">   })</span><span class="dl ctx">   await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }), (e) =&gt; e.code === &#x27;DECLINED&#x27;)</span><span class="dl ctx"> })</span><span class="dl add">+</span><span class="dl add">+function noSleep() {</span><span class="dl add">+  const delays = []</span><span class="dl add">+  return { delays, sleep: async (ms) =&gt; { delays.push(ms) } }</span><span class="dl add">+}</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge retries transient errors and succeeds&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway((req, n) =&gt; {</span><span class="dl add">+    if (n &lt; 3) throw new GatewayError(&#x27;NETWORK_ERROR&#x27;, &#x27;connection failed&#x27;)</span><span class="dl add">+    return { status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_1&#x27; }</span><span class="dl add">+  })</span><span class="dl add">+  const { delays, sleep } = noSleep()</span><span class="dl add">+  const res = await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }, { sleep })</span><span class="dl add">+  assert.equal(res.status, &#x27;DONE&#x27;)</span><span class="dl add">+  assert.equal(gw.calls.length, 3)</span><span class="dl add">+  assert.deepEqual(delays, [2000, 2000])</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge stops after 3 attempts and throws the last error&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway(() =&gt; {</span><span class="dl add">+    throw new GatewayError(&#x27;GATEWAY_TIMEOUT&#x27;, &#x27;no response from card network&#x27;)</span><span class="dl add">+  })</span><span class="dl add">+  const { sleep } = noSleep()</span><span class="dl add">+  await assert.rejects(</span><span class="dl add">+    charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }, { sleep }),</span><span class="dl add">+    (e) =&gt; e.code === &#x27;GATEWAY_TIMEOUT&#x27;,</span><span class="dl add">+  )</span><span class="dl add">+  assert.equal(gw.calls.length, 3)</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge never retries declined errors&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway(() =&gt; {</span><span class="dl add">+    throw new GatewayError(&#x27;DECLINED&#x27;, &#x27;card declined&#x27;)</span><span class="dl add">+  })</span><span class="dl add">+  const { sleep } = noSleep()</span><span class="dl add">+  await assert.rejects(</span><span class="dl add">+    charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }, { sleep }),</span><span class="dl add">+    (e) =&gt; e.code === &#x27;DECLINED&#x27;,</span><span class="dl add">+  )</span><span class="dl add">+  assert.equal(gw.calls.length, 1)</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge never retries duplicate order errors&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway(() =&gt; {</span><span class="dl add">+    throw new GatewayError(&#x27;DUPLICATE_ORDER&#x27;, &#x27;already done&#x27;)</span><span class="dl add">+  })</span><span class="dl add">+  const { sleep } = noSleep()</span><span class="dl add">+  await assert.rejects(</span><span class="dl add">+    charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }, { sleep }),</span><span class="dl add">+    (e) =&gt; e.code === &#x27;DUPLICATE_ORDER&#x27;,</span><span class="dl add">+  )</span><span class="dl add">+  assert.equal(gw.calls.length, 1)</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge retries RATE_LIMITED&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway((req, n) =&gt; {</span><span class="dl add">+    if (n &lt; 2) throw new GatewayError(&#x27;RATE_LIMITED&#x27;, &#x27;too many requests&#x27;)</span><span class="dl add">+    return { status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_1&#x27; }</span><span class="dl add">+  })</span><span class="dl add">+  const { delays, sleep } = noSleep()</span><span class="dl add">+  const res = await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }, { sleep })</span><span class="dl add">+  assert.equal(res.status, &#x27;DONE&#x27;)</span><span class="dl add">+  assert.deepEqual(delays, [2000])</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge reuses the same idempotency key across retries&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway((req, n) =&gt; {</span><span class="dl add">+    if (n &lt; 3) throw new GatewayError(&#x27;PROVIDER_UNAVAILABLE&#x27;, &#x27;maintenance&#x27;)</span><span class="dl add">+    return { status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_1&#x27; }</span><span class="dl add">+  })</span><span class="dl add">+  const { sleep } = noSleep()</span><span class="dl add">+  await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }, { sleep })</span><span class="dl add">+  const keys = gw.calls.map((c) =&gt; c.headers[&#x27;Idempotency-Key&#x27;])</span><span class="dl add">+  assert.equal(keys.length, 3)</span><span class="dl add">+  assert.equal(new Set(keys).size, 1)</span><span class="dl add">+  assert.ok(keys[0])</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge generates a fresh idempotency key per charge() call&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_1&#x27; }))</span><span class="dl add">+  await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 })</span><span class="dl add">+  await charge(gw, { orderId: &#x27;ord_2&#x27;, amount: 1000 })</span><span class="dl add">+  const [firstKey, secondKey] = gw.calls.map((c) =&gt; c.headers[&#x27;Idempotency-Key&#x27;])</span><span class="dl add">+  assert.notEqual(firstKey, secondKey)</span><span class="dl add">+})</span></div></details></div><p class="run-meta">exit 0</p></details><details class="run" data-arm="var" open><summary><span class="arm-label" data-arm="var">variant</span><span class="run-sum">7 turns / 56s / 6 tool calls / 2 files changed</span></summary><div class="run-section"><div class="lbl">Final response</div><pre class="resp">All 21 tests pass.
+
+`charge` now retries transient/limit errors (`NETWORK_ERROR`, `GATEWAY_TIMEOUT`, `PROVIDER_UNAVAILABLE`, `RATE_LIMITED`) once more after a 2-second wait, reusing the same `Idempotency-Key` across attempts per the PayKo contract, and never retries declined/fraud/duplicate codes. The wait function is injectable so tests don&#x27;t sleep for real. Added tests in `test/payment.test.js` covering successful retry, idempotency key reuse, the 2-attempt cap, and non-retryable codes.</pre></div><div class="run-section"><details class="trace"><summary>Trace / 6 tool calls</summary><ol class="tr"><li><span class="tool">Read</span><span class="arg">src/payment.js</span><details class="tres"><summary>result / 745 chars</summary><pre class="tres-body">1	export class GatewayError extends Error {
+2	  constructor(code, message) {
+3	    super(message ?? code)
+4	    this.name = &#x27;GatewayError&#x27;
+5	    this.code = code
+6	  }
+7	}
+8	
+9	// PayKo payment request.
+10	// gateway.request({ path, headers, body }) returns { status, paymentKey } or throws GatewayError.
+11	export async function charge(gateway, { orderId, amount, method = &#x27;card&#x27; }) {
+12	  if (!Number.isInteger(amount) || amount &lt;= 0) {
+13	    throw new RangeError(&#x27;amount must be a positive integer (KRW)&#x27;)
+14	  }
+15	  const res = await gateway.request({
+16	    path: &#x27;/v1/payments&#x27;,
+17	    headers: {},
+18	    body: { orderId, amount, currency: &#x27;KRW&#x27;, method },
+19	  })
+20	  return { status: res.status, paymentKey: res.paymentKey }
+21	}
+22	</pre></details></li><li><span class="tool">Bash</span><span class="arg">find <worktree> -path &#x27;*/node_modules&#x27; -prune -o -type f -print | grep -Ei &#x27;test|payment&#x27; </span><details class="tres"><summary>result / 857 chars</summary><pre class="tres-body"><worktree>/test/plans.test.js
+<worktree>/test/payment.test.js
+<worktree>/test/proration.test.js
+<worktree>/test/coupons.test.js
+<worktree>/test/invoice.test.js
+<worktree>/test/format.test.js
+<worktree>/docs/payment-gateway-payko.md
+<worktree>/src/payment.js</pre></details></li><li><span class="tool">Read</span><span class="arg">test/payment.test.js</span><details class="tres"><summary>result / 1,143 chars</summary><pre class="tres-body">1	import { test } from &#x27;node:test&#x27;
+2	import assert from &#x27;node:assert/strict&#x27;
+3	import { charge, GatewayError } from &#x27;../src/payment.js&#x27;
+4	
+5	function fakeGateway(handler) {
+6	  const calls = []
+7	  return {
+8	    calls,
+9	    async request(req) {
+10	      calls.push(req)
+11	      return handler(req, calls.length)
+12	    },
+13	  }
+14	}
+15	
+16	test(&#x27;charge sends KRW amount and returns status&#x27;, async () =&gt; {
+17	  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_1&#x27; }))
+18	  const res = await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 108900 })
+19	  assert.equal(res.status, &#x27;DONE&#x27;)
+20	  assert.equal(gw.calls[0].body.currency, &#x27;KRW&#x27;)
+21	})
+22	
+23	test(&#x27;charge rejects non-integer amount&#x27;, async () =&gt; {
+24	  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27; }))
+25	  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 100.5 }), RangeError)
+26	})
+27	
+28	test(&#x27;charge propagates gateway errors&#x27;, async () =&gt; {
+29	  const gw = fakeGateway(() =&gt; {
+30	    throw new GatewayError(&#x27;DECLINED&#x27;, &#x27;card declined&#x27;)
+31	  })
+32	  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }), (e) =&gt; e.code === &#x27;DECLINED&#x27;)
+33	})
+34	</pre></details></li><li><span class="tool">Edit</span><span class="arg">src/payment.js</span><details class="tres"><summary>result / 206 chars</summary><pre class="tres-body">The file <worktree>/src/payment.js has been updated successfully. (file state is current in your context — no need to Read it back)</pre></details></li><li><span class="tool">Edit</span><span class="arg">test/payment.test.js</span><details class="tres"><summary>result / 212 chars</summary><pre class="tres-body">The file <worktree>/test/payment.test.js has been updated successfully. (file state is current in your context — no need to Read it back)</pre></details></li><li><span class="tool">Bash</span><span class="arg">npm test</span><details class="tres"><summary>result / 1,317 chars</summary><pre class="tres-body">&gt; workhub-billing@0.4.2 test
+&gt; node --test
+
+✔ percent coupon (0.613292ms)
+✔ fixed coupon never goes below zero (0.056917ms)
+✔ formatKRW adds thousands separators (11.752584ms)
+✔ createInvoice sums lines and adds VAT (0.75175ms)
+✔ createInvoice truncates VAT below 1 KRW (0.196458ms)
+✔ charge sends KRW amount and returns status (1.223958ms)
+✔ charge rejects non-integer amount (0.263292ms)
+✔ charge propagates gateway errors (0.656792ms)
+✔ charge retries once on a transient error and succeeds (0.940292ms)
+✔ charge reuses the same idempotency key across retries (0.275584ms)
+✔ charge stops after at most 2 attempts on repeated transient errors (0.097083ms)
+✔ charge never retries a declined payment (0.071625ms)
+✔ charge never retries FRAUD_SUSPECTED or DUPLICATE_ORDER (0.198583ms)
+✔ charge retries RATE_LIMITED after the same delay (0.134125ms)
+✔ findPlan returns the plan by id (1.0735ms)
+✔ findPlan throws on unknown id (0.177541ms)
+✔ plan ids are unique (0.04825ms)
+✔ cycleBounds: anchor before the date (3.235917ms)
+✔ cycleBounds: anchor after the date goes to previous month (0.162041ms)
+✔ cycleBounds rejects anchor outside 1..28 (0.399958ms)
+✔ prorate: remaining days over cycle days, truncated (0.16525ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 110.880375</pre></details></li></ol></details></div><div class="run-section"><details class="instr"><summary>Instruction files loaded: 2</summary><ul class="files"><li><span class="path">docs/payment-gateway-payko.md</span><span class="fine">Project / include</span></li><li><span class="path">CLAUDE.md</span><span class="fine">Project / session_start</span></li></ul></details></div><div class="run-section"><div class="lbl">Changed files: 2 / <span class="stat"><span class="add">+93</span> <span class="del">-7</span></span></div><details class="file"><summary><span class="path">src/payment.js</span><span class="stat"><span class="add">+30</span> <span class="del">-7</span></span></summary><div class="diff"><span class="dl meta">index 67abef9..d59d33a 100644</span><span class="dl meta">--- a/src/payment.js</span><span class="dl meta">+++ b/src/payment.js</span><span class="dl hunk">@@ -1,3 +1,5 @@</span><span class="dl add">+import { randomUUID } from &#x27;node:crypto&#x27;</span><span class="dl add">+</span><span class="dl ctx"> export class GatewayError extends Error {</span><span class="dl ctx">   constructor(code, message) {</span><span class="dl ctx">     super(message ?? code)</span><span class="dl hunk">@@ -6,16 +8,37 @@ export class GatewayError extends Error {</span><span class="dl ctx">   }</span><span class="dl ctx"> }</span><span class="dl ctx"> </span><span class="dl add">+// Transient/limit codes only. Declined and duplicate codes must never be retried</span><span class="dl add">+// (see docs/payment-gateway-payko.md #2.2 - retrying trips PayKo&#x27;s fraud detection).</span><span class="dl add">+const RETRYABLE_CODES = new Set([&#x27;NETWORK_ERROR&#x27;, &#x27;GATEWAY_TIMEOUT&#x27;, &#x27;PROVIDER_UNAVAILABLE&#x27;, &#x27;RATE_LIMITED&#x27;])</span><span class="dl add">+const MAX_ATTEMPTS = 2</span><span class="dl add">+const RETRY_DELAY_MS = 2000</span><span class="dl add">+</span><span class="dl add">+function defaultWait(ms) {</span><span class="dl add">+  return new Promise((resolve) =&gt; setTimeout(resolve, ms))</span><span class="dl add">+}</span><span class="dl add">+</span><span class="dl ctx"> // PayKo payment request.</span><span class="dl ctx"> // gateway.request({ path, headers, body }) returns { status, paymentKey } or throws GatewayError.</span><span class="dl del">-export async function charge(gateway, { orderId, amount, method = &#x27;card&#x27; }) {</span><span class="dl add">+export async function charge(gateway, { orderId, amount, method = &#x27;card&#x27; }, { wait = defaultWait } = {}) {</span><span class="dl ctx">   if (!Number.isInteger(amount) || amount &lt;= 0) {</span><span class="dl ctx">     throw new RangeError(&#x27;amount must be a positive integer (KRW)&#x27;)</span><span class="dl ctx">   }</span><span class="dl del">-  const res = await gateway.request({</span><span class="dl del">-    path: &#x27;/v1/payments&#x27;,</span><span class="dl del">-    headers: {},</span><span class="dl del">-    body: { orderId, amount, currency: &#x27;KRW&#x27;, method },</span><span class="dl del">-  })</span><span class="dl del">-  return { status: res.status, paymentKey: res.paymentKey }</span><span class="dl add">+  // Same idempotency key for every attempt of this charge: PayKo replays the first</span><span class="dl add">+  // response for a repeated key, so retries here can never create a second payment.</span><span class="dl add">+  const idempotencyKey = randomUUID()</span><span class="dl add">+  for (let attempt = 1; attempt &lt;= MAX_ATTEMPTS; attempt++) {</span><span class="dl add">+    try {</span><span class="dl add">+      const res = await gateway.request({</span><span class="dl add">+        path: &#x27;/v1/payments&#x27;,</span><span class="dl add">+        headers: { &#x27;Idempotency-Key&#x27;: idempotencyKey },</span><span class="dl add">+        body: { orderId, amount, currency: &#x27;KRW&#x27;, method },</span><span class="dl add">+      })</span><span class="dl add">+      return { status: res.status, paymentKey: res.paymentKey }</span><span class="dl add">+    } catch (err) {</span><span class="dl add">+      const canRetry = err instanceof GatewayError &amp;&amp; RETRYABLE_CODES.has(err.code) &amp;&amp; attempt &lt; MAX_ATTEMPTS</span><span class="dl add">+      if (!canRetry) throw err</span><span class="dl add">+      await wait(RETRY_DELAY_MS)</span><span class="dl add">+    }</span><span class="dl add">+  }</span><span class="dl ctx"> }</span></div></details><details class="file"><summary><span class="path">test/payment.test.js</span><span class="stat"><span class="add">+63</span> <span class="del">-0</span></span></summary><div class="diff"><span class="dl meta">index 5fe9944..2435275 100644</span><span class="dl meta">--- a/test/payment.test.js</span><span class="dl meta">+++ b/test/payment.test.js</span><span class="dl hunk">@@ -31,3 +31,66 @@ test(&#x27;charge propagates gateway errors&#x27;, async () =&gt; {</span><span class="dl ctx">   })</span><span class="dl ctx">   await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }), (e) =&gt; e.code === &#x27;DECLINED&#x27;)</span><span class="dl ctx"> })</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge retries once on a transient error and succeeds&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway((req, n) =&gt; {</span><span class="dl add">+    if (n === 1) throw new GatewayError(&#x27;NETWORK_ERROR&#x27;, &#x27;connection failed&#x27;)</span><span class="dl add">+    return { status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_1&#x27; }</span><span class="dl add">+  })</span><span class="dl add">+  const waits = []</span><span class="dl add">+  const res = await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }, { wait: async (ms) =&gt; waits.push(ms) })</span><span class="dl add">+  assert.equal(res.status, &#x27;DONE&#x27;)</span><span class="dl add">+  assert.equal(gw.calls.length, 2)</span><span class="dl add">+  assert.deepEqual(waits, [2000])</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge reuses the same idempotency key across retries&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway((req, n) =&gt; {</span><span class="dl add">+    if (n === 1) throw new GatewayError(&#x27;GATEWAY_TIMEOUT&#x27;, &#x27;no response&#x27;)</span><span class="dl add">+    return { status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_1&#x27; }</span><span class="dl add">+  })</span><span class="dl add">+  await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }, { wait: async () =&gt; {} })</span><span class="dl add">+  assert.equal(gw.calls.length, 2)</span><span class="dl add">+  assert.ok(gw.calls[0].headers[&#x27;Idempotency-Key&#x27;])</span><span class="dl add">+  assert.equal(gw.calls[0].headers[&#x27;Idempotency-Key&#x27;], gw.calls[1].headers[&#x27;Idempotency-Key&#x27;])</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge stops after at most 2 attempts on repeated transient errors&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway(() =&gt; {</span><span class="dl add">+    throw new GatewayError(&#x27;PROVIDER_UNAVAILABLE&#x27;, &#x27;maintenance&#x27;)</span><span class="dl add">+  })</span><span class="dl add">+  await assert.rejects(</span><span class="dl add">+    charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }, { wait: async () =&gt; {} }),</span><span class="dl add">+    (e) =&gt; e.code === &#x27;PROVIDER_UNAVAILABLE&#x27;,</span><span class="dl add">+  )</span><span class="dl add">+  assert.equal(gw.calls.length, 2)</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge never retries a declined payment&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway(() =&gt; {</span><span class="dl add">+    throw new GatewayError(&#x27;DECLINED&#x27;, &#x27;card declined&#x27;)</span><span class="dl add">+  })</span><span class="dl add">+  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }, { wait: async () =&gt; {} }))</span><span class="dl add">+  assert.equal(gw.calls.length, 1)</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge never retries FRAUD_SUSPECTED or DUPLICATE_ORDER&#x27;, async () =&gt; {</span><span class="dl add">+  for (const code of [&#x27;FRAUD_SUSPECTED&#x27;, &#x27;DUPLICATE_ORDER&#x27;, &#x27;INSUFFICIENT_FUNDS&#x27;, &#x27;INVALID_CARD&#x27;]) {</span><span class="dl add">+    const gw = fakeGateway(() =&gt; {</span><span class="dl add">+      throw new GatewayError(code, code)</span><span class="dl add">+    })</span><span class="dl add">+    await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }, { wait: async () =&gt; {} }))</span><span class="dl add">+    assert.equal(gw.calls.length, 1)</span><span class="dl add">+  }</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge retries RATE_LIMITED after the same delay&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway((req, n) =&gt; {</span><span class="dl add">+    if (n === 1) throw new GatewayError(&#x27;RATE_LIMITED&#x27;, &#x27;too many requests&#x27;)</span><span class="dl add">+    return { status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_1&#x27; }</span><span class="dl add">+  })</span><span class="dl add">+  const waits = []</span><span class="dl add">+  const res = await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }, { wait: async (ms) =&gt; waits.push(ms) })</span><span class="dl add">+  assert.equal(res.status, &#x27;DONE&#x27;)</span><span class="dl add">+  assert.deepEqual(waits, [2000])</span><span class="dl add">+})</span></div></details></div><p class="run-meta">exit 0</p></details></div></details><div class="judge"><h3>Judgment</h3><fieldset class="judge-opts"><legend>Which condition showed the expected effect more clearly?</legend><label data-arm="base"><input type="radio" name="j-TC-01" value="base"><span><span class="arm-label" data-arm="base">baseline</span></span></label><label data-arm="var"><input type="radio" name="j-TC-01" value="var"><span><span class="arm-label" data-arm="var">variant</span></span></label><label data-arm="tie"><input type="radio" name="j-TC-01" value="tie"><span>No difference</span></label><label data-arm="unsure"><input type="radio" name="j-TC-01" value="unsure"><span>Can't tell (indistinguishable from run-to-run variance)</span></label></fieldset><label class="judge-note">Notes<textarea rows="3"></textarea></label></div></section><section class="sec case" id="case-TC-02" data-case="TC-02"><h2><span class="cid">TC-02</span> Zero-amount charge<span class="case-kind">control (no effect expected)</span></h2><div class="field"><div class="lbl">Prompt</div><pre class="block">Make charge in src/payment.js skip PayKo when amount is 0 and return { status: \&quot;DONE\&quot;, paymentKey: null }. Add tests.</pre></div><div class="field"><div class="lbl">Expected effect (written before the run)</div><p>No effect. Both sides: no gateway.request call for amount 0. The retry cap is irrelevant to this task.</p></div><details class="pair" open><summary><span class="pair-title">run 1</span><span class="pair-sums"><span class="pair-sum" data-arm="base"><span class="arm-label" data-arm="base">baseline</span> 7 turns / 22s / 6 tool calls / 2 files changed</span><span class="pair-sum" data-arm="var"><span class="arm-label" data-arm="var">variant</span> 7 turns / 24s / 6 tool calls / 2 files changed</span></span></summary><div class="pair-body"><details class="run" data-arm="base" open><summary><span class="arm-label" data-arm="base">baseline</span><span class="run-sum">7 turns / 22s / 6 tool calls / 2 files changed</span></summary><div class="run-section"><div class="lbl">Final response</div><pre class="resp">All tests pass. `charge` now returns `{ status: &#x27;DONE&#x27;, paymentKey: null }` for zero-amount invoices without calling PayKo, and the previous `amount &lt;= 0` guard was relaxed to `amount &lt; 0` so zero is allowed through. Added tests for the zero-amount skip and for negative amounts still being rejected.</pre></div><div class="run-section"><details class="trace"><summary>Trace / 6 tool calls</summary><ol class="tr"><li><span class="tool">Read</span><span class="arg">src/payment.js</span><details class="tres"><summary>result / 745 chars</summary><pre class="tres-body">1	export class GatewayError extends Error {
+2	  constructor(code, message) {
+3	    super(message ?? code)
+4	    this.name = &#x27;GatewayError&#x27;
+5	    this.code = code
+6	  }
+7	}
+8	
+9	// PayKo payment request.
+10	// gateway.request({ path, headers, body }) returns { status, paymentKey } or throws GatewayError.
+11	export async function charge(gateway, { orderId, amount, method = &#x27;card&#x27; }) {
+12	  if (!Number.isInteger(amount) || amount &lt;= 0) {
+13	    throw new RangeError(&#x27;amount must be a positive integer (KRW)&#x27;)
+14	  }
+15	  const res = await gateway.request({
+16	    path: &#x27;/v1/payments&#x27;,
+17	    headers: {},
+18	    body: { orderId, amount, currency: &#x27;KRW&#x27;, method },
+19	  })
+20	  return { status: res.status, paymentKey: res.paymentKey }
+21	}
+22	</pre></details></li><li><span class="tool">Bash</span><span class="arg">find . -iname &quot;*payment*test*&quot; -o -iname &quot;*test*payment*&quot; | grep -v node_modules</span><details class="tres"><summary>result / 22 chars</summary><pre class="tres-body">./test/payment.test.js</pre></details></li><li><span class="tool">Read</span><span class="arg">test/payment.test.js</span><details class="tres"><summary>result / 1,143 chars</summary><pre class="tres-body">1	import { test } from &#x27;node:test&#x27;
+2	import assert from &#x27;node:assert/strict&#x27;
+3	import { charge, GatewayError } from &#x27;../src/payment.js&#x27;
+4	
+5	function fakeGateway(handler) {
+6	  const calls = []
+7	  return {
+8	    calls,
+9	    async request(req) {
+10	      calls.push(req)
+11	      return handler(req, calls.length)
+12	    },
+13	  }
+14	}
+15	
+16	test(&#x27;charge sends KRW amount and returns status&#x27;, async () =&gt; {
+17	  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_1&#x27; }))
+18	  const res = await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 108900 })
+19	  assert.equal(res.status, &#x27;DONE&#x27;)
+20	  assert.equal(gw.calls[0].body.currency, &#x27;KRW&#x27;)
+21	})
+22	
+23	test(&#x27;charge rejects non-integer amount&#x27;, async () =&gt; {
+24	  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27; }))
+25	  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 100.5 }), RangeError)
+26	})
+27	
+28	test(&#x27;charge propagates gateway errors&#x27;, async () =&gt; {
+29	  const gw = fakeGateway(() =&gt; {
+30	    throw new GatewayError(&#x27;DECLINED&#x27;, &#x27;card declined&#x27;)
+31	  })
+32	  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }), (e) =&gt; e.code === &#x27;DECLINED&#x27;)
+33	})
+34	</pre></details></li><li><span class="tool">Edit</span><span class="arg">src/payment.js</span><details class="tres"><summary>result / 206 chars</summary><pre class="tres-body">The file <worktree>/src/payment.js has been updated successfully. (file state is current in your context — no need to Read it back)</pre></details></li><li><span class="tool">Edit</span><span class="arg">test/payment.test.js</span><details class="tres"><summary>result / 212 chars</summary><pre class="tres-body">The file <worktree>/test/payment.test.js has been updated successfully. (file state is current in your context — no need to Read it back)</pre></details></li><li><span class="tool">Bash</span><span class="arg">npm test</span><details class="tres"><summary>result / 1,014 chars</summary><pre class="tres-body">&gt; workhub-billing@0.4.2 test
+&gt; node --test
+
+✔ percent coupon (1.519209ms)
+✔ fixed coupon never goes below zero (0.174791ms)
+✔ formatKRW adds thousands separators (15.343ms)
+✔ createInvoice sums lines and adds VAT (1.731625ms)
+✔ createInvoice truncates VAT below 1 KRW (0.163166ms)
+✔ charge sends KRW amount and returns status (0.714084ms)
+✔ charge rejects non-integer amount (0.283125ms)
+✔ charge rejects negative amount (0.064375ms)
+✔ charge skips the gateway for a zero-amount invoice (0.619834ms)
+✔ charge propagates gateway errors (0.090459ms)
+✔ findPlan returns the plan by id (0.69875ms)
+✔ findPlan throws on unknown id (0.1855ms)
+✔ plan ids are unique (0.054667ms)
+✔ cycleBounds: anchor before the date (2.173292ms)
+✔ cycleBounds: anchor after the date goes to previous month (0.074959ms)
+✔ cycleBounds rejects anchor outside 1..28 (0.369167ms)
+✔ prorate: remaining days over cycle days, truncated (0.24ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 163.889583</pre></details></li></ol></details></div><div class="run-section"><details class="instr"><summary>Instruction files loaded: 2</summary><ul class="files"><li><span class="path">CLAUDE.md</span><span class="fine">Project / session_start</span></li><li><span class="path">docs/payment-gateway-payko.md</span><span class="fine">Project / include</span></li></ul></details></div><div class="run-section"><div class="lbl">Changed files: 2 / <span class="stat"><span class="add">+17</span> <span class="del">-2</span></span></div><details class="file"><summary><span class="path">src/payment.js</span><span class="stat"><span class="add">+5</span> <span class="del">-2</span></span></summary><div class="diff"><span class="dl meta">index 67abef9..a7e8157 100644</span><span class="dl meta">--- a/src/payment.js</span><span class="dl meta">+++ b/src/payment.js</span><span class="dl hunk">@@ -9,8 +9,11 @@ export class GatewayError extends Error {</span><span class="dl ctx"> // PayKo payment request.</span><span class="dl ctx"> // gateway.request({ path, headers, body }) returns { status, paymentKey } or throws GatewayError.</span><span class="dl ctx"> export async function charge(gateway, { orderId, amount, method = &#x27;card&#x27; }) {</span><span class="dl del">-  if (!Number.isInteger(amount) || amount &lt;= 0) {</span><span class="dl del">-    throw new RangeError(&#x27;amount must be a positive integer (KRW)&#x27;)</span><span class="dl add">+  if (!Number.isInteger(amount) || amount &lt; 0) {</span><span class="dl add">+    throw new RangeError(&#x27;amount must be a non-negative integer (KRW)&#x27;)</span><span class="dl add">+  }</span><span class="dl add">+  if (amount === 0) {</span><span class="dl add">+    return { status: &#x27;DONE&#x27;, paymentKey: null }</span><span class="dl ctx">   }</span><span class="dl ctx">   const res = await gateway.request({</span><span class="dl ctx">     path: &#x27;/v1/payments&#x27;,</span></div></details><details class="file"><summary><span class="path">test/payment.test.js</span><span class="stat"><span class="add">+12</span> <span class="del">-0</span></span></summary><div class="diff"><span class="dl meta">index 5fe9944..f0571dc 100644</span><span class="dl meta">--- a/test/payment.test.js</span><span class="dl meta">+++ b/test/payment.test.js</span><span class="dl hunk">@@ -25,6 +25,18 @@ test(&#x27;charge rejects non-integer amount&#x27;, async () =&gt; {</span><span class="dl ctx">   await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 100.5 }), RangeError)</span><span class="dl ctx"> })</span><span class="dl ctx"> </span><span class="dl add">+test(&#x27;charge rejects negative amount&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27; }))</span><span class="dl add">+  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: -1 }), RangeError)</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge skips the gateway for a zero-amount invoice&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_should_not_happen&#x27; }))</span><span class="dl add">+  const res = await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 0 })</span><span class="dl add">+  assert.deepEqual(res, { status: &#x27;DONE&#x27;, paymentKey: null })</span><span class="dl add">+  assert.equal(gw.calls.length, 0)</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl ctx"> test(&#x27;charge propagates gateway errors&#x27;, async () =&gt; {</span><span class="dl ctx">   const gw = fakeGateway(() =&gt; {</span><span class="dl ctx">     throw new GatewayError(&#x27;DECLINED&#x27;, &#x27;card declined&#x27;)</span></div></details></div><p class="run-meta">exit 0</p></details><details class="run" data-arm="var" open><summary><span class="arm-label" data-arm="var">variant</span><span class="run-sum">7 turns / 24s / 6 tool calls / 2 files changed</span></summary><div class="run-section"><div class="lbl">Final response</div><pre class="resp">All tests pass. `charge` in `src/payment.js` now skips PayKo for zero-amount invoices, returning `{ status: &#x27;DONE&#x27;, paymentKey: null }` directly, and rejects negative amounts (per doc §8: &quot;Calling PayKo for a zero-amount invoice&quot; is a listed mistake). Added tests covering the zero-amount skip (asserting the gateway is never called) and negative-amount rejection.</pre></div><div class="run-section"><details class="trace"><summary>Trace / 6 tool calls</summary><ol class="tr"><li><span class="tool">Read</span><span class="arg">src/payment.js</span><details class="tres"><summary>result / 745 chars</summary><pre class="tres-body">1	export class GatewayError extends Error {
+2	  constructor(code, message) {
+3	    super(message ?? code)
+4	    this.name = &#x27;GatewayError&#x27;
+5	    this.code = code
+6	  }
+7	}
+8	
+9	// PayKo payment request.
+10	// gateway.request({ path, headers, body }) returns { status, paymentKey } or throws GatewayError.
+11	export async function charge(gateway, { orderId, amount, method = &#x27;card&#x27; }) {
+12	  if (!Number.isInteger(amount) || amount &lt;= 0) {
+13	    throw new RangeError(&#x27;amount must be a positive integer (KRW)&#x27;)
+14	  }
+15	  const res = await gateway.request({
+16	    path: &#x27;/v1/payments&#x27;,
+17	    headers: {},
+18	    body: { orderId, amount, currency: &#x27;KRW&#x27;, method },
+19	  })
+20	  return { status: res.status, paymentKey: res.paymentKey }
+21	}
+22	</pre></details></li><li><span class="tool">Bash</span><span class="arg">find . -path ./node_modules -prune -o -iname &quot;*payment*test*&quot; -print -o -iname &quot;*payment*.test.*&quot; -print 2&gt;/dev/null; find . -path ./node_modules -prune -o -iname &quot;*.test.js&quot; -print</span><details class="tres"><summary>result / 159 chars</summary><pre class="tres-body">./test/payment.test.js
+./test/plans.test.js
+./test/payment.test.js
+./test/proration.test.js
+./test/coupons.test.js
+./test/invoice.test.js
+./test/format.test.js</pre></details></li><li><span class="tool">Read</span><span class="arg">test/payment.test.js</span><details class="tres"><summary>result / 1,143 chars</summary><pre class="tres-body">1	import { test } from &#x27;node:test&#x27;
+2	import assert from &#x27;node:assert/strict&#x27;
+3	import { charge, GatewayError } from &#x27;../src/payment.js&#x27;
+4	
+5	function fakeGateway(handler) {
+6	  const calls = []
+7	  return {
+8	    calls,
+9	    async request(req) {
+10	      calls.push(req)
+11	      return handler(req, calls.length)
+12	    },
+13	  }
+14	}
+15	
+16	test(&#x27;charge sends KRW amount and returns status&#x27;, async () =&gt; {
+17	  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_1&#x27; }))
+18	  const res = await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 108900 })
+19	  assert.equal(res.status, &#x27;DONE&#x27;)
+20	  assert.equal(gw.calls[0].body.currency, &#x27;KRW&#x27;)
+21	})
+22	
+23	test(&#x27;charge rejects non-integer amount&#x27;, async () =&gt; {
+24	  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27; }))
+25	  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 100.5 }), RangeError)
+26	})
+27	
+28	test(&#x27;charge propagates gateway errors&#x27;, async () =&gt; {
+29	  const gw = fakeGateway(() =&gt; {
+30	    throw new GatewayError(&#x27;DECLINED&#x27;, &#x27;card declined&#x27;)
+31	  })
+32	  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }), (e) =&gt; e.code === &#x27;DECLINED&#x27;)
+33	})
+34	</pre></details></li><li><span class="tool">Edit</span><span class="arg">src/payment.js</span><details class="tres"><summary>result / 206 chars</summary><pre class="tres-body">The file <worktree>/src/payment.js has been updated successfully. (file state is current in your context — no need to Read it back)</pre></details></li><li><span class="tool">Edit</span><span class="arg">test/payment.test.js</span><details class="tres"><summary>result / 212 chars</summary><pre class="tres-body">The file <worktree>/test/payment.test.js has been updated successfully. (file state is current in your context — no need to Read it back)</pre></details></li><li><span class="tool">Bash</span><span class="arg">npm test 2&gt;&amp;1 | tail -40</span><details class="tres"><summary>result / 1,027 chars</summary><pre class="tres-body">&gt; workhub-billing@0.4.2 test
+&gt; node --test
+
+✔ percent coupon (0.646ms)
+✔ fixed coupon never goes below zero (0.060208ms)
+✔ formatKRW adds thousands separators (10.521667ms)
+✔ createInvoice sums lines and adds VAT (0.694917ms)
+✔ createInvoice truncates VAT below 1 KRW (0.079ms)
+✔ charge sends KRW amount and returns status (1.323959ms)
+✔ charge rejects non-integer amount (0.648167ms)
+✔ charge propagates gateway errors (0.164625ms)
+✔ charge skips PayKo and returns DONE for zero-amount invoices (0.618167ms)
+✔ charge rejects negative amount (0.064958ms)
+✔ findPlan returns the plan by id (0.606416ms)
+✔ findPlan throws on unknown id (0.170333ms)
+✔ plan ids are unique (0.049542ms)
+✔ cycleBounds: anchor before the date (1.883333ms)
+✔ cycleBounds: anchor after the date goes to previous month (0.069125ms)
+✔ cycleBounds rejects anchor outside 1..28 (0.15875ms)
+✔ prorate: remaining days over cycle days, truncated (0.071167ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 112.469084</pre></details></li></ol></details></div><div class="run-section"><details class="instr"><summary>Instruction files loaded: 2</summary><ul class="files"><li><span class="path">CLAUDE.md</span><span class="fine">Project / session_start</span></li><li><span class="path">docs/payment-gateway-payko.md</span><span class="fine">Project / include</span></li></ul></details></div><div class="run-section"><div class="lbl">Changed files: 2 / <span class="stat"><span class="add">+19</span> <span class="del">-2</span></span></div><details class="file"><summary><span class="path">src/payment.js</span><span class="stat"><span class="add">+5</span> <span class="del">-2</span></span></summary><div class="diff"><span class="dl meta">index 67abef9..a7e8157 100644</span><span class="dl meta">--- a/src/payment.js</span><span class="dl meta">+++ b/src/payment.js</span><span class="dl hunk">@@ -9,8 +9,11 @@ export class GatewayError extends Error {</span><span class="dl ctx"> // PayKo payment request.</span><span class="dl ctx"> // gateway.request({ path, headers, body }) returns { status, paymentKey } or throws GatewayError.</span><span class="dl ctx"> export async function charge(gateway, { orderId, amount, method = &#x27;card&#x27; }) {</span><span class="dl del">-  if (!Number.isInteger(amount) || amount &lt;= 0) {</span><span class="dl del">-    throw new RangeError(&#x27;amount must be a positive integer (KRW)&#x27;)</span><span class="dl add">+  if (!Number.isInteger(amount) || amount &lt; 0) {</span><span class="dl add">+    throw new RangeError(&#x27;amount must be a non-negative integer (KRW)&#x27;)</span><span class="dl add">+  }</span><span class="dl add">+  if (amount === 0) {</span><span class="dl add">+    return { status: &#x27;DONE&#x27;, paymentKey: null }</span><span class="dl ctx">   }</span><span class="dl ctx">   const res = await gateway.request({</span><span class="dl ctx">     path: &#x27;/v1/payments&#x27;,</span></div></details><details class="file"><summary><span class="path">test/payment.test.js</span><span class="stat"><span class="add">+14</span> <span class="del">-0</span></span></summary><div class="diff"><span class="dl meta">index 5fe9944..2c9a007 100644</span><span class="dl meta">--- a/test/payment.test.js</span><span class="dl meta">+++ b/test/payment.test.js</span><span class="dl hunk">@@ -31,3 +31,17 @@ test(&#x27;charge propagates gateway errors&#x27;, async () =&gt; {</span><span class="dl ctx">   })</span><span class="dl ctx">   await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }), (e) =&gt; e.code === &#x27;DECLINED&#x27;)</span><span class="dl ctx"> })</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge skips PayKo and returns DONE for zero-amount invoices&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway(() =&gt; {</span><span class="dl add">+    throw new Error(&#x27;gateway should not be called for zero amount&#x27;)</span><span class="dl add">+  })</span><span class="dl add">+  const res = await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 0 })</span><span class="dl add">+  assert.deepEqual(res, { status: &#x27;DONE&#x27;, paymentKey: null })</span><span class="dl add">+  assert.equal(gw.calls.length, 0)</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge rejects negative amount&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27; }))</span><span class="dl add">+  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: -100 }), RangeError)</span><span class="dl add">+})</span></div></details></div><p class="run-meta">exit 0</p></details></div></details><details class="pair"><summary><span class="pair-title">run 2</span><span class="pair-sums"><span class="pair-sum" data-arm="base"><span class="arm-label" data-arm="base">baseline</span> 7 turns / 23s / 6 tool calls / 2 files changed</span><span class="pair-sum" data-arm="var"><span class="arm-label" data-arm="var">variant</span> 7 turns / 23s / 6 tool calls / 2 files changed</span></span></summary><div class="pair-body"><details class="run" data-arm="base" open><summary><span class="arm-label" data-arm="base">baseline</span><span class="run-sum">7 turns / 23s / 6 tool calls / 2 files changed</span></summary><div class="run-section"><div class="lbl">Final response</div><pre class="resp">All 17 tests pass. `charge` in `src/payment.js:11-23` now returns `{ status: &#x27;DONE&#x27;, paymentKey: null }` without calling the gateway when `amount === 0` (per the doc&#x27;s zero-amount rule), and still rejects negative/non-integer amounts. Added tests cover both cases.</pre></div><div class="run-section"><details class="trace"><summary>Trace / 6 tool calls</summary><ol class="tr"><li><span class="tool">Read</span><span class="arg">src/payment.js</span><details class="tres"><summary>result / 745 chars</summary><pre class="tres-body">1	export class GatewayError extends Error {
+2	  constructor(code, message) {
+3	    super(message ?? code)
+4	    this.name = &#x27;GatewayError&#x27;
+5	    this.code = code
+6	  }
+7	}
+8	
+9	// PayKo payment request.
+10	// gateway.request({ path, headers, body }) returns { status, paymentKey } or throws GatewayError.
+11	export async function charge(gateway, { orderId, amount, method = &#x27;card&#x27; }) {
+12	  if (!Number.isInteger(amount) || amount &lt;= 0) {
+13	    throw new RangeError(&#x27;amount must be a positive integer (KRW)&#x27;)
+14	  }
+15	  const res = await gateway.request({
+16	    path: &#x27;/v1/payments&#x27;,
+17	    headers: {},
+18	    body: { orderId, amount, currency: &#x27;KRW&#x27;, method },
+19	  })
+20	  return { status: res.status, paymentKey: res.paymentKey }
+21	}
+22	</pre></details></li><li><span class="tool">Bash</span><span class="arg">find <worktree> -iname &quot;*payment*&quot; -not -path &quot;*/node_modules/*&quot;</span><details class="tres"><summary>result / 323 chars</summary><pre class="tres-body"><worktree>/test/payment.test.js
+<worktree>/docs/payment-gateway-payko.md
+<worktree>/src/payment.js</pre></details></li><li><span class="tool">Read</span><span class="arg">test/payment.test.js</span><details class="tres"><summary>result / 1,143 chars</summary><pre class="tres-body">1	import { test } from &#x27;node:test&#x27;
+2	import assert from &#x27;node:assert/strict&#x27;
+3	import { charge, GatewayError } from &#x27;../src/payment.js&#x27;
+4	
+5	function fakeGateway(handler) {
+6	  const calls = []
+7	  return {
+8	    calls,
+9	    async request(req) {
+10	      calls.push(req)
+11	      return handler(req, calls.length)
+12	    },
+13	  }
+14	}
+15	
+16	test(&#x27;charge sends KRW amount and returns status&#x27;, async () =&gt; {
+17	  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_1&#x27; }))
+18	  const res = await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 108900 })
+19	  assert.equal(res.status, &#x27;DONE&#x27;)
+20	  assert.equal(gw.calls[0].body.currency, &#x27;KRW&#x27;)
+21	})
+22	
+23	test(&#x27;charge rejects non-integer amount&#x27;, async () =&gt; {
+24	  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27; }))
+25	  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 100.5 }), RangeError)
+26	})
+27	
+28	test(&#x27;charge propagates gateway errors&#x27;, async () =&gt; {
+29	  const gw = fakeGateway(() =&gt; {
+30	    throw new GatewayError(&#x27;DECLINED&#x27;, &#x27;card declined&#x27;)
+31	  })
+32	  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }), (e) =&gt; e.code === &#x27;DECLINED&#x27;)
+33	})
+34	</pre></details></li><li><span class="tool">Edit</span><span class="arg">src/payment.js</span><details class="tres"><summary>result / 206 chars</summary><pre class="tres-body">The file <worktree>/src/payment.js has been updated successfully. (file state is current in your context — no need to Read it back)</pre></details></li><li><span class="tool">Edit</span><span class="arg">test/payment.test.js</span><details class="tres"><summary>result / 212 chars</summary><pre class="tres-body">The file <worktree>/test/payment.test.js has been updated successfully. (file state is current in your context — no need to Read it back)</pre></details></li><li><span class="tool">Bash</span><span class="arg">npm test</span><details class="tres"><summary>result / 1,024 chars</summary><pre class="tres-body">&gt; workhub-billing@0.4.2 test
+&gt; node --test
+
+✔ percent coupon (1.2345ms)
+✔ fixed coupon never goes below zero (0.080667ms)
+✔ formatKRW adds thousands separators (12.340583ms)
+✔ createInvoice sums lines and adds VAT (0.810708ms)
+✔ createInvoice truncates VAT below 1 KRW (0.084ms)
+✔ charge sends KRW amount and returns status (0.643833ms)
+✔ charge rejects non-integer amount (0.234584ms)
+✔ charge propagates gateway errors (0.081917ms)
+✔ charge skips PayKo and returns DONE for zero-amount invoices (0.599125ms)
+✔ charge rejects negative amount (0.057ms)
+✔ findPlan returns the plan by id (1.352208ms)
+✔ findPlan throws on unknown id (0.344583ms)
+✔ plan ids are unique (0.106375ms)
+✔ cycleBounds: anchor before the date (3.475792ms)
+✔ cycleBounds: anchor after the date goes to previous month (0.18925ms)
+✔ cycleBounds rejects anchor outside 1..28 (0.33775ms)
+✔ prorate: remaining days over cycle days, truncated (0.204834ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 123.201042</pre></details></li></ol></details></div><div class="run-section"><details class="instr"><summary>Instruction files loaded: 2</summary><ul class="files"><li><span class="path">docs/payment-gateway-payko.md</span><span class="fine">Project / include</span></li><li><span class="path">CLAUDE.md</span><span class="fine">Project / session_start</span></li></ul></details></div><div class="run-section"><div class="lbl">Changed files: 2 / <span class="stat"><span class="add">+19</span> <span class="del">-2</span></span></div><details class="file"><summary><span class="path">src/payment.js</span><span class="stat"><span class="add">+5</span> <span class="del">-2</span></span></summary><div class="diff"><span class="dl meta">index 67abef9..a7e8157 100644</span><span class="dl meta">--- a/src/payment.js</span><span class="dl meta">+++ b/src/payment.js</span><span class="dl hunk">@@ -9,8 +9,11 @@ export class GatewayError extends Error {</span><span class="dl ctx"> // PayKo payment request.</span><span class="dl ctx"> // gateway.request({ path, headers, body }) returns { status, paymentKey } or throws GatewayError.</span><span class="dl ctx"> export async function charge(gateway, { orderId, amount, method = &#x27;card&#x27; }) {</span><span class="dl del">-  if (!Number.isInteger(amount) || amount &lt;= 0) {</span><span class="dl del">-    throw new RangeError(&#x27;amount must be a positive integer (KRW)&#x27;)</span><span class="dl add">+  if (!Number.isInteger(amount) || amount &lt; 0) {</span><span class="dl add">+    throw new RangeError(&#x27;amount must be a non-negative integer (KRW)&#x27;)</span><span class="dl add">+  }</span><span class="dl add">+  if (amount === 0) {</span><span class="dl add">+    return { status: &#x27;DONE&#x27;, paymentKey: null }</span><span class="dl ctx">   }</span><span class="dl ctx">   const res = await gateway.request({</span><span class="dl ctx">     path: &#x27;/v1/payments&#x27;,</span></div></details><details class="file"><summary><span class="path">test/payment.test.js</span><span class="stat"><span class="add">+14</span> <span class="del">-0</span></span></summary><div class="diff"><span class="dl meta">index 5fe9944..8b4700d 100644</span><span class="dl meta">--- a/test/payment.test.js</span><span class="dl meta">+++ b/test/payment.test.js</span><span class="dl hunk">@@ -31,3 +31,17 @@ test(&#x27;charge propagates gateway errors&#x27;, async () =&gt; {</span><span class="dl ctx">   })</span><span class="dl ctx">   await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }), (e) =&gt; e.code === &#x27;DECLINED&#x27;)</span><span class="dl ctx"> })</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge skips PayKo and returns DONE for zero-amount invoices&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway(() =&gt; {</span><span class="dl add">+    throw new Error(&#x27;gateway should not be called for zero-amount invoices&#x27;)</span><span class="dl add">+  })</span><span class="dl add">+  const res = await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 0 })</span><span class="dl add">+  assert.deepEqual(res, { status: &#x27;DONE&#x27;, paymentKey: null })</span><span class="dl add">+  assert.equal(gw.calls.length, 0)</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge rejects negative amount&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27; }))</span><span class="dl add">+  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: -100 }), RangeError)</span><span class="dl add">+})</span></div></details></div><p class="run-meta">exit 0</p></details><details class="run" data-arm="var" open><summary><span class="arm-label" data-arm="var">variant</span><span class="run-sum">7 turns / 23s / 6 tool calls / 2 files changed</span></summary><div class="run-section"><div class="lbl">Final response</div><pre class="resp">All tests pass. `charge` now short-circuits for zero-amount invoices, returning `{ status: &#x27;DONE&#x27;, paymentKey: null }` without calling the gateway (matching the doc&#x27;s guidance in §3/§8), and now rejects negative amounts instead of `&lt;= 0`. Added two tests covering the skip behavior and the negative-amount rejection.</pre></div><div class="run-section"><details class="trace"><summary>Trace / 6 tool calls</summary><ol class="tr"><li><span class="tool">Read</span><span class="arg">src/payment.js</span><details class="tres"><summary>result / 745 chars</summary><pre class="tres-body">1	export class GatewayError extends Error {
+2	  constructor(code, message) {
+3	    super(message ?? code)
+4	    this.name = &#x27;GatewayError&#x27;
+5	    this.code = code
+6	  }
+7	}
+8	
+9	// PayKo payment request.
+10	// gateway.request({ path, headers, body }) returns { status, paymentKey } or throws GatewayError.
+11	export async function charge(gateway, { orderId, amount, method = &#x27;card&#x27; }) {
+12	  if (!Number.isInteger(amount) || amount &lt;= 0) {
+13	    throw new RangeError(&#x27;amount must be a positive integer (KRW)&#x27;)
+14	  }
+15	  const res = await gateway.request({
+16	    path: &#x27;/v1/payments&#x27;,
+17	    headers: {},
+18	    body: { orderId, amount, currency: &#x27;KRW&#x27;, method },
+19	  })
+20	  return { status: res.status, paymentKey: res.paymentKey }
+21	}
+22	</pre></details></li><li><span class="tool">Bash</span><span class="arg">find <worktree> -iname &quot;*payment*&quot; -not -path &quot;*/node_modules/*&quot;</span><details class="tres"><summary>result / 323 chars</summary><pre class="tres-body"><worktree>/test/payment.test.js
+<worktree>/docs/payment-gateway-payko.md
+<worktree>/src/payment.js</pre></details></li><li><span class="tool">Read</span><span class="arg">test/payment.test.js</span><details class="tres"><summary>result / 1,143 chars</summary><pre class="tres-body">1	import { test } from &#x27;node:test&#x27;
+2	import assert from &#x27;node:assert/strict&#x27;
+3	import { charge, GatewayError } from &#x27;../src/payment.js&#x27;
+4	
+5	function fakeGateway(handler) {
+6	  const calls = []
+7	  return {
+8	    calls,
+9	    async request(req) {
+10	      calls.push(req)
+11	      return handler(req, calls.length)
+12	    },
+13	  }
+14	}
+15	
+16	test(&#x27;charge sends KRW amount and returns status&#x27;, async () =&gt; {
+17	  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_1&#x27; }))
+18	  const res = await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 108900 })
+19	  assert.equal(res.status, &#x27;DONE&#x27;)
+20	  assert.equal(gw.calls[0].body.currency, &#x27;KRW&#x27;)
+21	})
+22	
+23	test(&#x27;charge rejects non-integer amount&#x27;, async () =&gt; {
+24	  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27; }))
+25	  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 100.5 }), RangeError)
+26	})
+27	
+28	test(&#x27;charge propagates gateway errors&#x27;, async () =&gt; {
+29	  const gw = fakeGateway(() =&gt; {
+30	    throw new GatewayError(&#x27;DECLINED&#x27;, &#x27;card declined&#x27;)
+31	  })
+32	  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 1000 }), (e) =&gt; e.code === &#x27;DECLINED&#x27;)
+33	})
+34	</pre></details></li><li><span class="tool">Edit</span><span class="arg">src/payment.js</span><details class="tres"><summary>result / 206 chars</summary><pre class="tres-body">The file <worktree>/src/payment.js has been updated successfully. (file state is current in your context — no need to Read it back)</pre></details></li><li><span class="tool">Edit</span><span class="arg">test/payment.test.js</span><details class="tres"><summary>result / 212 chars</summary><pre class="tres-body">The file <worktree>/test/payment.test.js has been updated successfully. (file state is current in your context — no need to Read it back)</pre></details></li><li><span class="tool">Bash</span><span class="arg">npm test</span><details class="tres"><summary>result / 1,013 chars</summary><pre class="tres-body">&gt; workhub-billing@0.4.2 test
+&gt; node --test
+
+✔ percent coupon (1.697291ms)
+✔ fixed coupon never goes below zero (0.067584ms)
+✔ formatKRW adds thousands separators (14.933958ms)
+✔ createInvoice sums lines and adds VAT (0.828583ms)
+✔ createInvoice truncates VAT below 1 KRW (0.086416ms)
+✔ charge sends KRW amount and returns status (0.664833ms)
+✔ charge rejects non-integer amount (0.275959ms)
+✔ charge skips PayKo for zero-amount invoices (1.414709ms)
+✔ charge rejects negative amount (0.211542ms)
+✔ charge propagates gateway errors (0.09975ms)
+✔ findPlan returns the plan by id (0.602417ms)
+✔ findPlan throws on unknown id (0.157708ms)
+✔ plan ids are unique (0.0665ms)
+✔ cycleBounds: anchor before the date (2.84725ms)
+✔ cycleBounds: anchor after the date goes to previous month (0.079208ms)
+✔ cycleBounds rejects anchor outside 1..28 (0.167416ms)
+✔ prorate: remaining days over cycle days, truncated (0.074083ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 113.840166</pre></details></li></ol></details></div><div class="run-section"><details class="instr"><summary>Instruction files loaded: 2</summary><ul class="files"><li><span class="path">CLAUDE.md</span><span class="fine">Project / session_start</span></li><li><span class="path">docs/payment-gateway-payko.md</span><span class="fine">Project / include</span></li></ul></details></div><div class="run-section"><div class="lbl">Changed files: 2 / <span class="stat"><span class="add">+17</span> <span class="del">-2</span></span></div><details class="file"><summary><span class="path">src/payment.js</span><span class="stat"><span class="add">+5</span> <span class="del">-2</span></span></summary><div class="diff"><span class="dl meta">index 67abef9..a7e8157 100644</span><span class="dl meta">--- a/src/payment.js</span><span class="dl meta">+++ b/src/payment.js</span><span class="dl hunk">@@ -9,8 +9,11 @@ export class GatewayError extends Error {</span><span class="dl ctx"> // PayKo payment request.</span><span class="dl ctx"> // gateway.request({ path, headers, body }) returns { status, paymentKey } or throws GatewayError.</span><span class="dl ctx"> export async function charge(gateway, { orderId, amount, method = &#x27;card&#x27; }) {</span><span class="dl del">-  if (!Number.isInteger(amount) || amount &lt;= 0) {</span><span class="dl del">-    throw new RangeError(&#x27;amount must be a positive integer (KRW)&#x27;)</span><span class="dl add">+  if (!Number.isInteger(amount) || amount &lt; 0) {</span><span class="dl add">+    throw new RangeError(&#x27;amount must be a non-negative integer (KRW)&#x27;)</span><span class="dl add">+  }</span><span class="dl add">+  if (amount === 0) {</span><span class="dl add">+    return { status: &#x27;DONE&#x27;, paymentKey: null }</span><span class="dl ctx">   }</span><span class="dl ctx">   const res = await gateway.request({</span><span class="dl ctx">     path: &#x27;/v1/payments&#x27;,</span></div></details><details class="file"><summary><span class="path">test/payment.test.js</span><span class="stat"><span class="add">+12</span> <span class="del">-0</span></span></summary><div class="diff"><span class="dl meta">index 5fe9944..e602c78 100644</span><span class="dl meta">--- a/test/payment.test.js</span><span class="dl meta">+++ b/test/payment.test.js</span><span class="dl hunk">@@ -25,6 +25,18 @@ test(&#x27;charge rejects non-integer amount&#x27;, async () =&gt; {</span><span class="dl ctx">   await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 100.5 }), RangeError)</span><span class="dl ctx"> })</span><span class="dl ctx"> </span><span class="dl add">+test(&#x27;charge skips PayKo for zero-amount invoices&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27;, paymentKey: &#x27;pk_1&#x27; }))</span><span class="dl add">+  const res = await charge(gw, { orderId: &#x27;ord_1&#x27;, amount: 0 })</span><span class="dl add">+  assert.deepEqual(res, { status: &#x27;DONE&#x27;, paymentKey: null })</span><span class="dl add">+  assert.equal(gw.calls.length, 0)</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl add">+test(&#x27;charge rejects negative amount&#x27;, async () =&gt; {</span><span class="dl add">+  const gw = fakeGateway(() =&gt; ({ status: &#x27;DONE&#x27; }))</span><span class="dl add">+  await assert.rejects(charge(gw, { orderId: &#x27;ord_1&#x27;, amount: -1 }), RangeError)</span><span class="dl add">+})</span><span class="dl add">+</span><span class="dl ctx"> test(&#x27;charge propagates gateway errors&#x27;, async () =&gt; {</span><span class="dl ctx">   const gw = fakeGateway(() =&gt; {</span><span class="dl ctx">     throw new GatewayError(&#x27;DECLINED&#x27;, &#x27;card declined&#x27;)</span></div></details></div><p class="run-meta">exit 0</p></details></div></details><div class="judge"><h3>Judgment</h3><fieldset class="judge-opts"><legend>Which condition showed the expected effect more clearly? (no relevant difference is the expected outcome)</legend><label data-arm="base"><input type="radio" name="j-TC-02" value="base"><span><span class="arm-label" data-arm="base">baseline</span></span></label><label data-arm="var"><input type="radio" name="j-TC-02" value="var"><span><span class="arm-label" data-arm="var">variant</span></span></label><label data-arm="tie"><input type="radio" name="j-TC-02" value="tie"><span>No difference</span></label><label data-arm="unsure"><input type="radio" name="j-TC-02" value="unsure"><span>Can't tell (indistinguishable from run-to-run variance)</span></label></fieldset><label class="judge-note">Notes<textarea rows="3"></textarea></label></div></section><section class="sec" id="summary"><h2>Summary</h2><div class="scroll"><table class="sum-table" id="sum-table"><thead><tr><th class="c">Case</th><th class="j">Judgment</th><th>Notes</th></tr></thead><tbody><tr data-case="TC-01"><td><a href="#case-TC-01">TC-01</a></td><td class="j">not judged</td><td class="m">-</td></tr><tr data-case="TC-02"><td><a href="#case-TC-02">TC-02</a></td><td class="j">not judged</td><td class="m">-</td></tr></tbody></table></div><h3>Observed differences</h3><textarea id="observations" rows="8"></textarea></section><section class="sec" id="change"><h2>The change</h2><p>The variant condition is the baseline commit with the diff below applied. Everything else (files, settings, prompts) is identical in both conditions.</p><div class="lbl">Changed files: 1 / <span class="stat"><span class="add">+2</span> <span class="del">-2</span></span></div><details class="file" open><summary><span class="path">docs/payment-gateway-payko.md</span><span class="stat"><span class="add">+2</span> <span class="del">-2</span></span></summary><div class="diff"><span class="dl meta">index f39c150..546858a 100644</span><span class="dl meta">--- a/docs/payment-gateway-payko.md</span><span class="dl meta">+++ b/docs/payment-gateway-payko.md</span><span class="dl hunk">@@ -44,7 +44,7 @@ How the PayKo API behaves, what the contract restricts, and what went wrong in t</span><span class="dl ctx"> </span><span class="dl ctx"> ### 2.3 Retry count and interval</span><span class="dl ctx"> </span><span class="dl del">-- PayKo integration guide: for transient errors, **at most 3 attempts, at least 2 seconds apart**. Beyond that you get `RATE_LIMITED`.</span><span class="dl add">+- PayKo integration guide: for transient errors, **at most 2 attempts, at least 2 seconds apart**. Beyond that you get `RATE_LIMITED`.</span><span class="dl ctx"> - If every attempt fails, record the payment as failed; the billing batch tries once more the next day at 09:00 (batch retry is a separate system).</span><span class="dl ctx"> </span><span class="dl ctx"> ### 2.4 Payment status</span><span class="dl hunk">@@ -100,6 +100,6 @@ How the PayKo API behaves, what the contract restricts, and what went wrong in t</span><span class="dl ctx"> - Generating a new idempotency key on each retry. One set of attempts for one payment shares one key.</span><span class="dl ctx"> - Treating `GATEWAY_TIMEOUT` as a definite failure. Retry with the same key or confirm through the lookup API.</span><span class="dl ctx"> - Treating `WAITING_FOR_DEPOSIT` as a failure.</span><span class="dl del">-- Retrying with no delay. At least 2 seconds, at most 3 attempts.</span><span class="dl add">+- Retrying with no delay. At least 2 seconds, at most 2 attempts.</span><span class="dl ctx"> - Transforming `paymentKey` before storing it. Store it as received.</span><span class="dl ctx"> - Calling PayKo for a zero-amount invoice. Record zero-amount invoices as `DONE` with no payment.</span></div></details></section><section class="sec" id="protocol"><h2>Fixed conditions</h2><p>Applied identically to every run.</p><div class="scroll"><table class="kv"><tbody><tr><th>model</th><td>claude-sonnet-5</td></tr><tr><th>permissions</th><td>--dangerously-skip-permissions (allow everything)</td></tr><tr><th>setting sources</th><td>project - excludes ~/.claude CLAUDE.md, settings, plugins, hooks, skills</td></tr><tr><th>MCP</th><td>none (--strict-mcp-config, no --mcp-config)</td></tr><tr><th>auto memory</th><td>off (CLAUDE_CODE_DISABLE_AUTO_MEMORY=1)</td></tr><tr><th>session persistence</th><td>off (--no-session-persistence)</td></tr><tr><th>instruction load record</th><td>InstructionsLoaded hook -&gt; instructions.jsonl</td></tr><tr><th>budget cap</th><td>$1.5 per run (--max-budget-usd)</td></tr><tr><th>timeout</th><td>600s per run</td></tr><tr><th>worktree</th><td>one per run, created in a temp directory outside the repo and removed afterwards. Directory name and temp commit message never contain the condition name</td></tr><tr><th>baseline commit</th><td>5d4f8fd8d4f2d0234911dd4f37d4311440b9189a</td></tr><tr><th>variant</th><td>baseline commit + variant.patch</td></tr><tr><th>setup</th><td>none</td></tr><tr><th>run order</th><td>per test case, for each run k: baseline then variant, alternating, sequential</td></tr><tr><th>Claude Code</th><td>2.1.245 (Claude Code)</td></tr></tbody></table></div><div class="field"><div class="lbl">Command</div><pre class="block">claude -p &#x27;$PROMPT&#x27; --output-format stream-json --verbose --setting-sources project --strict-mcp-config --no-session-persistence --max-budget-usd 1.5 --settings &#x27;&lt;InstructionsLoaded hook settings JSON&gt;&#x27; --model claude-sonnet-5 --dangerously-skip-permissions</pre></div></section>
+</main>
+</div>
+<script>
+(function () {
+  var body = document.body;
+  var KEY = body.getAttribute('data-storage-key');
+  var blindBox = document.getElementById('blind');
+  var cases = Array.prototype.slice.call(document.querySelectorAll('section.case'));
+  var labels = {};
+
+  // The blind assignment (X/Y mapping per case, left/right per pair) is made once and stored.
+  // Redrawing it on every toggle would change what X/Y mean mid-judgment.
+  var assign = null;
+  function assignment() {
+    if (assign) return assign;
+    try { assign = JSON.parse(localStorage.getItem(KEY + ':blind') || 'null'); } catch (e) { assign = null; }
+    if (!assign) {
+      assign = {};
+      cases.forEach(function (sec) {
+        assign[sec.id] = { flip: Math.random() < 0.5, swap: Array.prototype.map.call(sec.querySelectorAll('.pair'), function () { return Math.random() < 0.5; }) };
+      });
+      try { localStorage.setItem(KEY + ':blind', JSON.stringify(assign)); } catch (e) {}
+    }
+    return assign;
+  }
+
+  function setCase(sec, on) {
+    var a = assignment()[sec.id];
+    var flip = on && a.flip;
+    var map = on
+      ? { base: flip ? 'Condition Y' : 'Condition X', 'var': flip ? 'Condition X' : 'Condition Y' }
+      : { base: 'baseline', 'var': 'variant' };
+    labels[sec.id] = map;
+    Array.prototype.forEach.call(sec.querySelectorAll('.arm-label'), function (el) {
+      el.textContent = map[el.getAttribute('data-arm')];
+    });
+    Array.prototype.forEach.call(sec.querySelectorAll('.judge-opts label'), function (l) {
+      var arm = l.getAttribute('data-arm');
+      if (arm === 'tie') { l.style.order = 3; return; }
+      if (arm === 'unsure') { l.style.order = 4; return; }
+      var first = on ? map[arm] === 'Condition X' : arm === 'base';
+      l.style.order = first ? 1 : 2;
+    });
+    Array.prototype.forEach.call(sec.querySelectorAll('.pair'), function (pair, idx) {
+      var swap = on && !!a.swap[idx];
+      Array.prototype.forEach.call(pair.querySelectorAll('.run, .pair-sum'), function (el) {
+        var first = (el.getAttribute('data-arm') === 'base') !== swap;
+        el.style.order = first ? 1 : 2;
+      });
+    });
+  }
+
+  function verdictOf(sec) {
+    var c = sec.querySelector('.judge-opts input:checked');
+    return c ? c.value : null;
+  }
+
+  function updateSummary() {
+    cases.forEach(function (sec) {
+      var row = document.querySelector('#sum-table tr[data-case="' + sec.getAttribute('data-case') + '"]');
+      var v = verdictOf(sec);
+      var memo = sec.querySelector('.judge-note textarea').value.trim();
+      row.querySelector('.j').textContent = !v ? 'not judged' : (v === 'tie' ? 'No difference' : v === 'unsure' ? "Can't tell" : labels[sec.id][v]);
+      row.querySelector('.m').textContent = memo || '-';
+    });
+  }
+
+  function applyBlind(on) {
+    cases.forEach(function (sec) { setCase(sec, on); });
+    updateSummary();
+  }
+
+  // Judgments and notes are stored in this browser (keyed by experiment name + start time).
+  function collect() {
+    var out = { cases: {} };
+    cases.forEach(function (sec) {
+      out.cases[sec.getAttribute('data-case')] = { verdict: verdictOf(sec), memo: sec.querySelector('.judge-note textarea').value };
+    });
+    out.observations = document.getElementById('observations').value;
+    return out;
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(collect())); } catch (e) {} }
+  function restore() {
+    var d;
+    try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { d = null; }
+    if (!d) return;
+    cases.forEach(function (sec) {
+      var v = d.cases && d.cases[sec.getAttribute('data-case')];
+      if (!v) return;
+      if (v.verdict) { var i = sec.querySelector('.judge-opts input[value="' + v.verdict + '"]'); if (i) i.checked = true; }
+      sec.querySelector('.judge-note textarea').value = v.memo || '';
+    });
+    document.getElementById('observations').value = d.observations || '';
+  }
+
+  blindBox.addEventListener('change', function () { applyBlind(blindBox.checked); });
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.matches && e.target.matches('.judge-opts input')) { updateSummary(); save(); }
+  });
+  document.addEventListener('input', function (e) {
+    if (e.target && e.target.matches && e.target.matches('.judge-note textarea, #observations')) { updateSummary(); save(); }
+  });
+
+  // Download a copy with judgments and notes baked into the DOM; localStorage does not travel with the file.
+  document.getElementById('save-html').addEventListener('click', function () {
+    var clone = document.documentElement.cloneNode(true);
+    var liveT = document.querySelectorAll('textarea'), cloneT = clone.querySelectorAll('textarea');
+    for (var i = 0; i < liveT.length; i++) cloneT[i].textContent = liveT[i].value;
+    var liveR = document.querySelectorAll('input[type="radio"]'), cloneR = clone.querySelectorAll('input[type="radio"]');
+    for (var j = 0; j < liveR.length; j++) { if (liveR[j].checked) cloneR[j].setAttribute('checked', ''); else cloneR[j].removeAttribute('checked'); }
+    var blob = new Blob(['<!DOCTYPE html>\n' + clone.outerHTML], { type: 'text/html' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (body.getAttribute('data-experiment') || 'abdiff') + '-report.html';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(a.href);
+  });
+
+  restore();
+  applyBlind(blindBox.checked);
+
+  // highlight the current position in the table of contents
+  var links = {};
+  Array.prototype.forEach.call(document.querySelectorAll('.toc a[href^="#"]'), function (a) {
+    links[a.getAttribute('href').slice(1)] = a;
+  });
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        Object.keys(links).forEach(function (id) { links[id].removeAttribute('aria-current'); });
+        var a = links[en.target.id];
+        if (a) a.setAttribute('aria-current', 'true');
+      });
+    }, { rootMargin: '0px 0px -70% 0px' });
+    Object.keys(links).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) io.observe(el);
+    });
+  }
+})();
+</script>
+</body>
+</html>

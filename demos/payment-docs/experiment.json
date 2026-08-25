@@ -1,0 +1,32 @@
+{
+  "name": "payment-docs",
+  "hypothesis": "With docs/ present, implementations follow policy that only the docs state: downgrades are deferred to the next cycle with no negative amount, legacy plans prorate over 30 days, retries reuse the same Idempotency-Key and never retry declined codes.",
+  "n": 2,
+  "model": "claude-sonnet-5",
+  "permission": "bypass",
+  "timeout_sec": 600,
+  "budget_usd": 1.5,
+  "test_cases": [
+    {
+      "id": "TC-01",
+      "kind": "target",
+      "title": "changePlan",
+      "prompt": "Implement changePlan(account, newPlanId, at) in src/proration.js. It returns what to charge this cycle when an account changes plan, and add tests. account looks like { planId, anchorDay }.",
+      "expect": "Variant: Read docs/billing-cycle-and-proration.md before the first edit; downgrade returns amount 0 and takes effect next cycle (no negative or refund amount); legacy plans use a 30-day denominator. Baseline expected: 0/2 on each."
+    },
+    {
+      "id": "TC-02",
+      "kind": "target",
+      "title": "Retry in charge",
+      "prompt": "Make charge in src/payment.js retry when the payment request fails. Add tests.",
+      "expect": "Variant: Read docs/payment-gateway-payko.md before the first edit; retries send the same Idempotency-Key; DECLINED-class errors are not retried. Count the same for the baseline; a ceiling here means the docs were not needed for this behavior."
+    },
+    {
+      "id": "TC-03",
+      "kind": "control",
+      "title": "listPlansByPrice",
+      "prompt": "Add listPlansByPrice() to src/plans.js that returns plans sorted by monthly price ascending, and add a test.",
+      "expect": "No effect. Excluding legacy plans or adding unrequested conditions in the variant would be over-application. Note whether the variant reads docs anyway and how much longer it takes."
+    }
+  ]
+}

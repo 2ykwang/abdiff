@@ -1,0 +1,21 @@
+diff --git a/docs/payment-gateway-payko.md b/docs/payment-gateway-payko.md
+index f39c150..546858a 100644
+--- a/docs/payment-gateway-payko.md
++++ b/docs/payment-gateway-payko.md
+@@ -44,7 +44,7 @@ How the PayKo API behaves, what the contract restricts, and what went wrong in t
+ 
+ ### 2.3 Retry count and interval
+ 
+-- PayKo integration guide: for transient errors, **at most 3 attempts, at least 2 seconds apart**. Beyond that you get `RATE_LIMITED`.
++- PayKo integration guide: for transient errors, **at most 2 attempts, at least 2 seconds apart**. Beyond that you get `RATE_LIMITED`.
+ - If every attempt fails, record the payment as failed; the billing batch tries once more the next day at 09:00 (batch retry is a separate system).
+ 
+ ### 2.4 Payment status
+@@ -100,6 +100,6 @@ How the PayKo API behaves, what the contract restricts, and what went wrong in t
+ - Generating a new idempotency key on each retry. One set of attempts for one payment shares one key.
+ - Treating `GATEWAY_TIMEOUT` as a definite failure. Retry with the same key or confirm through the lookup API.
+ - Treating `WAITING_FOR_DEPOSIT` as a failure.
+-- Retrying with no delay. At least 2 seconds, at most 3 attempts.
++- Retrying with no delay. At least 2 seconds, at most 2 attempts.
+ - Transforming `paymentKey` before storing it. Store it as received.
+ - Calling PayKo for a zero-amount invoice. Record zero-amount invoices as `DONE` with no payment.

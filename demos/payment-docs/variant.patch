@@ -1,0 +1,215 @@
+diff --git a/docs/billing-cycle-and-proration.md b/docs/billing-cycle-and-proration.md
+new file mode 100644
+index 0000000..0fdef11
+--- /dev/null
++++ b/docs/billing-cycle-and-proration.md
+@@ -0,0 +1,98 @@
++# Billing cycle and proration policy
++
++This document covers the Workhub subscription billing cycle, how money is handled on plan changes, and the proration rules.
++The code (`src/proration.js`) only provides calculation tools; which calculation applies in which situation is decided by the
++policy here. The finance team owns this policy, and changes go through finance review (see "Change procedure" in `glossary-and-incident-log.md`).
++
++## 1. Billing cycle
++
++- Every account has an `anchorDay` (1..28). A new cycle starts on that day each month, and one month's fee is charged up front on the cycle start date.
++- A cycle is `[start date, next start date)`. With an anchor of March 10, one cycle runs from March 10 through April 9.
++- `anchorDay` is set from the date of the first paid conversion. The paid conversion date is the day the 14-day trial ends.
++- Days 29, 30, and 31 are never used as anchors. In August 2023 we moved all 412 accounts with those anchors to day 28,
++  because cycle lengths diverged per account in February and CS tickets piled up. The finance team keeps the list of moved accounts.
++- The billing batch runs at 09:00 KST on the cycle start date. Plan changes made before that time are reflected in the cycle starting that day.
++
++## 2. Date basis: Korea Standard Time (KST) calendar dates
++
++- Every billing-related date is a **KST calendar date**. Servers and the database run in UTC, but any date entering billing logic must already be a
++  `YYYY-MM-DD` string converted to KST.
++- Reason: the "issue date" on the tax invoice must equal the cycle start date, and tax invoices are issued on Korean time.
++  Using UTC dates would push charges between 00:00 and 09:00 KST to the previous day. This actually happened in June 2023 (INC-2023-06).
++- So billing logic never uses the time component of a `Date` or the user's browser time zone. Overseas customers are on KST as well.
++
++## 3. Money handling on plan changes
++
++Plan changes fall into three kinds. The criterion is **the monthly fee**. Seat count and features are not considered.
++
++| Change | Takes effect | Billing |
++|---|---|---|
++| Upgrade (monthly fee goes up) | Immediately | Prorate the difference over the remaining days and charge immediately |
++| Downgrade (monthly fee goes down) | Next cycle start date | No charge and no refund this cycle. New fee from the next cycle |
++| Lateral move (same monthly fee) | Immediately | 0 |
++
++### 3.1 Upgrade
++
++- The change date itself counts as a remaining day. Changing on March 25 with a cycle ending April 10 leaves 16 remaining days.
++- Charge = (new plan monthly fee − old plan monthly fee) × remaining days ÷ cycle days. Truncate below 1 KRW.
++- Cycle days are actual calendar days (28..31). Legacy plans follow section 4 instead.
++- The upgrade invoice is issued and charged immediately. If the payment fails, the plan change is rolled back too.
++
++### 3.2 Downgrade: no money moves this cycle
++
++- A downgrade takes effect **from the next cycle start date**. The change request is stored only as a "scheduled" change.
++- The difference for the rest of the current cycle is not refunded or returned as credit. The system must never produce a negative amount.
++- Background: until November 2022, downgrades were also prorated immediately and the difference became a negative invoice. Every negative invoice
++  then required a corrected tax invoice at month-end close, and the finance team closed November 8 days late (INC-2022-11).
++  The December 2022 policy meeting fixed "downgrades are deferred, no refunds", and it is in section 7.3 of the terms of service.
++- If CS requests an exception, the finance team handles it as a manual credit. The system has no exception path.
++- Upgrading again while a downgrade is scheduled cancels the scheduled downgrade.
++
++### 3.3 Lateral move
++
++- Moving to a plan with the same monthly fee (none in the current catalog, but past regional plans had them). Immediate, charge 0.
++
++## 4. Proration for legacy plans (`L-` prefix)
++
++- 2019 contract, article 4: "For proration, one month is 30 days." So any proration involving a legacy plan uses **30 as the denominator**,
++  regardless of the cycle's actual length. The numerator (remaining days) is the actual remaining days, capped at 30.
++- This rule applies when the existing plan is legacy. Upgrading from a legacy plan to a current plan is still the last cycle under the old contract,
++  so the 30-day basis applies.
++- In a 31-day cycle a legacy customer who upgrades pays slightly more than a current customer. That is what the contract says, and customers know it.
++  "Fixing" it to actual days would breach the contract.
++
++## 5. Worked examples
++
++| Situation | Calculation | Amount |
++|---|---|---|
++| Team (99,000) → Business (290,000), anchor 10, changed March 25 | (290,000 − 99,000) × 16 ÷ 31 | 98,580 KRW |
++| Business → Team, changed March 25 | Team fee from the next cycle (April 10). This cycle charge 0 | 0 KRW |
++| L-growth-2019 (149,000) → Business (290,000), anchor 10, changed March 25 | (290,000 − 149,000) × 16 ÷ 30 | 75,200 KRW |
++| Starter → Team, changed on the cycle start date | Remaining days = cycle days, full difference | 70,000 KRW |
++
++## 6. Out of scope
++
++- Annual billing is not handled by this module. The 37 annual customers are invoiced manually by the finance team.
++- Enterprise is invoiced per contract (net-30) and has no plan-change concept.
++
++## 7. Cancellation
++
++- Cancellation takes effect at the end of the cycle. The remaining period stays usable and there is no refund. Same principle as downgrades.
++- Immediate cancellation with refund is finance-only (legal disputes, duplicate signups, and so on). The system has no immediate-cancel path.
++- An account with a scheduled cancellation does not accept plan changes. The scheduled cancellation must be removed first.
++
++## 8. Trial and anchor selection
++
++- The trial is 14 days and needs no card. There are no invoices during the trial.
++- If a card is on file when the trial ends, the account converts that day, and that day's date becomes `anchorDay`.
++  If that day is the 29th, 30th, or 31st, `anchorDay` is set to 28 and only the first cycle runs a day or two longer. The first cycle is charged a full month.
++- If no card is on file at trial end, the account becomes read-only, and the day a card is later added becomes the anchor.
++
++## 9. Common implementation mistakes
++
++- Excluding the change date from remaining days. It is included. A change on the cycle start date has the whole cycle remaining.
++- Giving a "fair" credit on downgrade. Forbidden by policy, and the cause of INC-2022-11.
++- Using a 30-day denominator for current plans, or actual days for legacy plans. Legacy status is decided by the **existing** plan.
++- Truncating only once at the end. Truncate once in proration, once after coupons, once in VAT.
++- Leaving the plan changed after an upgrade payment fails. On payment failure, roll back the plan change.
++- Stacking a second scheduled downgrade on an account that already has one. Overwrite instead of stacking.
+diff --git a/docs/payment-gateway-payko.md b/docs/payment-gateway-payko.md
+new file mode 100644
+index 0000000..17dd0d6
+--- /dev/null
++++ b/docs/payment-gateway-payko.md
+@@ -0,0 +1,105 @@
++# PG (PayKo) integration contract and operational notes
++
++We use a single PG, PayKo. `charge` in `src/payment.js` is a thin function that calls PayKo `/v1/payments`.
++How the PayKo API behaves, what the contract restricts, and what went wrong in the past are not in the code. This document records them.
++
++## 1. Contract overview
++
++- Contract signed March 2022. Three payment methods: card, virtual account, bank transfer.
++- Fees: card 2.3%, virtual account 300 KRW per transaction, bank transfer 1.5%.
++- Settlement: D+2 business days. Settlement files arrive daily at 06:00 over SFTP; the finance team reconciles them against invoices.
++- The PayKo contact channel and incident phone numbers are on the internal wiki under "Payments/PayKo". They are not recorded here.
++
++## 2. API behavior
++
++### 2.1 Idempotency key (`Idempotency-Key` header)
++
++- If a request carries an `Idempotency-Key` header, PayKo **returns the first response unchanged for any request with the same key for 24 hours.**
++  It does not create a second payment.
++- Without the header, every request creates a new payment. The same `orderId` does not prevent this (`DUPLICATE_ORDER` is raised only after a payment is
++  `DONE`; while one is in progress, both can go through).
++- Generate a new key per request, but **when retrying the same payment, always send the same key again.** A new key on every retry is the same as no key.
++- This was the cause of the March 2024 double-charge incident (INC-2024-03). A retry after a timeout had no key, and 27 customers were charged
++  twice. Refunds and the apology notice took two weeks.
++
++### 2.2 Error codes and whether to retry
++
++| Class | Code | Meaning | Retry |
++|---|---|---|---|
++| Transient | `NETWORK_ERROR` | Connection failed | Yes |
++| Transient | `GATEWAY_TIMEOUT` | PayKo got no response from the card network. **The payment may have succeeded** | Only with the same idempotency key |
++| Transient | `PROVIDER_UNAVAILABLE` | Card network maintenance | Yes |
++| Limit | `RATE_LIMITED` | Requests per second exceeded | After 2 seconds |
++| Declined | `DECLINED` | Declined by the card issuer | **Never** |
++| Declined | `INSUFFICIENT_FUNDS` | Over limit or insufficient balance | **Never** |
++| Declined | `INVALID_CARD` | Bad or expired card details | **Never** |
++| Declined | `FRAUD_SUSPECTED` | Flagged by fraud detection | **Never**. Escalate to CS immediately |
++| Duplicate | `DUPLICATE_ORDER` | Same `orderId` already `DONE` | Never. Look up the existing payment |
++
++- Retrying a declined code trips the card network's fraud detection. PayKo tracks the "retry after decline" ratio per merchant, sends a warning when
++  it passes a threshold, and suspends payments on the third warning. We received the first warning in May 2024 (INC-2024-05).
++  That time the cause was a person clicking "charge again" repeatedly in the CS tool, but automatic retries count the same way.
++- `GATEWAY_TIMEOUT` may mean the payment actually succeeded. Retrying with the same idempotency key returns the successful payment's response;
++  retrying with a different key creates a double charge.
++
++### 2.3 Retry count and interval
++
++- PayKo integration guide: for transient errors, **at most 3 attempts, at least 2 seconds apart**. Beyond that you get `RATE_LIMITED`.
++- If all 3 attempts fail, record the payment as failed; the billing batch tries once more the next day at 09:00 (batch retry is a separate system).
++
++### 2.4 Payment status
++
++| Status | Meaning |
++|---|---|
++| `DONE` | Payment complete |
++| `WAITING_FOR_DEPOSIT` | Virtual account issued, waiting for deposit. **Not a failure** |
++| `CANCELED` | Canceled |
++| `EXPIRED` | Virtual account deposit window (3 days) passed |
++
++- For virtual accounts the request response is `WAITING_FOR_DEPOSIT`, and `DONE` arrives later by webhook when the deposit lands. Do not treat the
++  request response alone as a failure.
++
++## 3. Request rules
++
++- `orderId`: at most 64 characters, alphanumeric plus `_` and `-`. Must be unique within the merchant. Use the invoice number as is.
++- `amount`: integer KRW. Card payments under 100 KRW return `INVALID_AMOUNT`. Zero-amount invoices do not call PayKo.
++- `currency`: always `KRW`. No other currency is in the contract.
++- Card payments over 5,000,000 KRW may require extra authentication from PayKo. Enterprise does not pay by card, so this is rare in practice.
++
++## 4. Test environment
++
++- Sandbox keys start with `pk_test_`. In the sandbox, `amount` `1004` returns `DECLINED` and `5000` returns `GATEWAY_TIMEOUT`.
++- Unit tests do not call PayKo; they inject a fake `gateway` object. Integration tests run against the sandbox once a week.
++
++## 5. Settlement reconciliation
++
++- Match the `paymentKey` in each daily settlement file against the invoice's payment record. Unmatched rows go to the finance team.
++- Store `paymentKey` **exactly** as received in the payment response. Refunds, cancellations, and reconciliation all key on it.
++
++## 6. Webhooks
++
++- PayKo POSTs to `/webhooks/payko` when a payment status changes: virtual account deposit (`DONE`), expiry (`EXPIRED`), cancellation (`CANCELED`).
++- Verify the request signature header (`PayKo-Signature`). On verification failure respond 400 and do not process.
++- If PayKo does not receive a 2xx it resends the same webhook **up to 5 times**. Webhook handling must therefore produce the same result when the same
++  `paymentKey` and status arrive twice.
++- There have been cases where the webhook arrived before the payment request's response (rarely, on card payments). If no payment record exists for the
++  `paymentKey`, reprocess after 30 seconds.
++
++## 7. Cancellation and refunds
++
++- The cancel API is `/v1/payments/{paymentKey}/cancel`. Partial cancellation uses `cancelAmount`. Cancellation also uses an idempotency key.
++- Cancel only after finance approval. The billing system calls cancel automatically in exactly **one** case: an upgrade payment succeeded but saving the
++  plan change failed.
++- Refunding a virtual account payment is a transfer to the customer's bank account and requires `refundReceiveAccount`. CS collects it from the customer.
++- Card cancellations are authorization reversals; after settlement (D+2 or later) they become capture cancellations and show up as refunds on the
++  customer's card statement.
++
++## 8. Common implementation mistakes
++
++- Retrying every exception. Declined codes are never retried.
++- Generating a new idempotency key on each retry. One set of attempts for one payment shares one key.
++- Treating `GATEWAY_TIMEOUT` as a definite failure. Retry with the same key or confirm through the lookup API.
++- Treating `WAITING_FOR_DEPOSIT` as a failure.
++- Retrying with no delay. At least 2 seconds, at most 3 attempts.
++- Transforming `paymentKey` before storing it. Store it as received.
++- Calling PayKo for a zero-amount invoice. Record zero-amount invoices as `DONE` with no payment.

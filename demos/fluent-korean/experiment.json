@@ -1,0 +1,32 @@
+{
+  "name": "fluent-korean",
+  "hypothesis": "With the fluent-korean output style applied, Korean write-ups end sentences with full predicates instead of noun fragments, drop fewer particles, and avoid em dashes; the content stays the same.",
+  "n": 2,
+  "model": "claude-sonnet-5",
+  "permission": "bypass",
+  "timeout_sec": 600,
+  "budget_usd": 1.5,
+  "test_cases": [
+    {
+      "id": "TC-01",
+      "kind": "target",
+      "title": "Gap analysis of charge()",
+      "prompt": "src/payment.js\uc758 charge\ub97c \uc77d\uace0, docs/payment-gateway-payko.md \uae30\uc900\uc73c\ub85c \ube60\uc9c4 \ucc98\ub9ac\ub97c \uc815\ub9ac\ud574\uc11c \ubcf4\uace0\ud574\uc918. \ucf54\ub4dc\ub294 \uace0\uce58\uc9c0 \ub9c8.",
+      "expect": "Variant: fewer lines ending in noun fragments (e.g. \"\ud310\ub2e8 \ubd88\uac00\", \"\uc804\ud30c\ub9cc \ud568\"), more sentences ending in -\ub2e4/-\ub2c8\ub2e4, no em dashes. Same list of missing behaviors on both sides."
+    },
+    {
+      "id": "TC-02",
+      "kind": "target",
+      "title": "Wiki article on billing cycles",
+      "prompt": "src/proration.js\uc640 docs/billing-cycle-and-proration.md\ub97c \uc77d\uace0, \uccad\uad6c \uc8fc\uae30\uc640 \uc77c\ud560 \uacc4\uc0b0\uc774 \ucf54\ub4dc\uc5d0\uc11c \uc5b4\ub5bb\uac8c \uad6c\ud604\ub3fc \uc788\uace0 \uc815\ucc45\uacfc \uc5b4\ub514\uac00 \ub2e4\ub978\uc9c0 \ud300 \uc704\ud0a4\uc5d0 \uc62c\ub9b4 \uae30\uc220 \uae00\ub85c \uc815\ub9ac\ud574\uc918. \ucf54\ub4dc\ub294 \uace0\uce58\uc9c0 \ub9c8.",
+      "expect": "Variant: complete sentences with predicates and particles throughout; baseline: telegraphic bullet fragments. Facts (cycle bounds, proration, legacy 30-day denominator, downgrade deferral) appear on both sides."
+    },
+    {
+      "id": "TC-03",
+      "kind": "control",
+      "title": "Code only",
+      "prompt": "src/plans.js\uc5d0 \ud50c\ub79c\uc744 \uc6d4 \uc694\uae08 \uc624\ub984\ucc28\uc21c\uc73c\ub85c \ub3cc\ub824\uc8fc\ub294 listPlansByPrice() \ud568\uc218\ub97c \ucd94\uac00\ud574\uc918. \uc124\uba85\uc740 \ud558\uc9c0 \ub9d0\uace0 \ucf54\ub4dc\ub9cc \uace0\uccd0.",
+      "expect": "No effect. Same kind of diff on both sides and a one-line answer. A long Korean explanation in the variant would be over-application."
+    }
+  ]
+}
