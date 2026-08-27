@@ -1,7 +1,6 @@
 ---
 name: abdiff
-description: Check whether one change to Claude Code's instructions or context (CLAUDE.md, .claude/rules, referenced docs, skills) actually changes behavior. Runs the same prompts against HEAD and HEAD + the uncommitted diff, N times each, and builds an HTML report for a person to compare the runs with condition labels hidden. Use it to test adding, deleting, rewording, or moving a rule, or to check whether an @import or a referenced doc is loaded and followed. Not for checking application code or anything automated tests already cover.
-disable-model-invocation: true
+description: Check whether one change to Claude Code's instructions or context (CLAUDE.md, .claude/rules, referenced docs, skills) actually changes behavior. Runs the same prompts against HEAD and HEAD + the uncommitted diff, N times each, and builds an HTML report for a person to compare the runs with condition labels hidden. Use it to test adding, deleting, rewording, or moving a rule, or to check whether an @import or a referenced doc is loaded and followed. Not for checking application code or anything automated tests already cover. Only run it when the user explicitly asks for it; never start an experiment on your own.
 argument-hint: "[what you want to test]"
 ---
 
