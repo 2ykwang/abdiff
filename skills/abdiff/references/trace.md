@@ -67,23 +67,17 @@ Written by `reading.py` for each run. `findings[]` has one entry per countable s
 
 ## Report layout
 
-Anything that reveals which arm is the variant (the diff, the fixed conditions) comes after the verdicts. Blind mode is on when the report opens.
+The change under test comes before the cases: knowing what changed is what makes the traces readable. There is no verdict input; the report is a viewer for the raw records. "Save HTML" in the left menu downloads a copy of the page as it is, including which sections are open.
 
 | Order | Section | Contents |
 |---|---|---|
 | 1 | Overview | Hypothesis, run time, Claude Code version, observed model, N, number of cases, number of runs and abnormal runs, run cost (LLM reading excluded), LLM reading status if it ran. Warning if N is under 3 |
-| 2 | Per-case comparison | Prompt, expected effect, and for each run k a baseline/variant pair (only the first pair expanded). Per run: final response (expanded), trace with tool results (collapsed), loaded instruction files (collapsed), changed files (list expanded, diff collapsed), LLM reading (collapsed, only if judged), exit code and anomaly flags |
-| | Verdict | "Which side showed the behavior related to the expected effect more clearly?" Options: condition X / condition Y / no difference / can't tell, plus a note. Control cases show "no relevant difference is the expected value" |
-| 3 | Summary | Case × verdict table, observed differences (free text) |
-| 4 | Variant condition | `variant.patch` per file |
-| 5 | Fixed conditions | Protocol table from `manifest.json` and the command |
-
-The X/Y assignment and left/right order for blind mode are decided once on first open and stored in the browser. Toggling blind mode doesn't change them.
-
-Verdicts and notes are saved in the browser's `localStorage` (keyed by experiment name and start time). They don't transfer to another browser or machine. To share, use "Save HTML" in the left menu to download a copy with the verdicts embedded.
+| 2 | The change | `variant.patch` per file |
+| 3 | Per-case comparison | Prompt, expected effect, and for each run k a baseline/variant pair (only the first pair expanded). Per run: final response (expanded), trace with tool results (collapsed), loaded instruction files (collapsed), changed files (list expanded, diff collapsed), LLM reading (collapsed, only if it ran), exit code and anomaly flags |
+| 4 | Fixed conditions | Protocol table from `manifest.json` and the command |
 
 ## Limits
 
 - Context injected by hook stdout isn't recorded.
 - The model saying "I read X" isn't evidence. Only `instructions.jsonl` and `Read` calls in the trace count.
-- N is small. When variance between runs is larger than the difference between arms, "can't tell" is the honest verdict.
+- N is small. When variance between runs is larger than the difference between arms, "can't tell" is the honest conclusion.

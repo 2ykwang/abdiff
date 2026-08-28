@@ -67,17 +67,6 @@ pre {
   overflow-wrap: anywhere;
 }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-button.plain {
-  font: inherit; font-size: 14px; color: var(--fg-2);
-  background: none; border: 1px solid var(--line-2); padding: 4px 10px; cursor: pointer;
-}
-button.plain:hover { color: var(--fg); border-color: var(--fg); }
-textarea {
-  display: block; width: 100%; margin-top: 6px;
-  font: inherit; font-size: 14.5px; line-height: 1.55;
-  color: var(--fg); background: var(--bg); border: 1px solid var(--line-2); padding: 8px 10px; resize: vertical;
-}
-
 /* layout: fixed table of contents on the left + content */
 .layout { display: grid; grid-template-columns: 236px minmax(0, 1fr); }
 .toc {
@@ -90,8 +79,11 @@ textarea {
 .toc a:hover { color: var(--fg); }
 .toc a[aria-current="true"] { color: var(--fg); border-left-color: var(--fg); background: var(--bg-3); }
 .toc .ctl { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--line); }
-.toc .ctl label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; font-weight: 500; margin-bottom: 12px; }
-.toc .ctl input { margin: 4px 0 0; accent-color: var(--fg); }
+button.plain {
+  font: inherit; font-size: 14px; color: var(--fg-2);
+  background: none; border: 1px solid var(--line-2); padding: 4px 10px; cursor: pointer;
+}
+button.plain:hover { color: var(--fg); border-color: var(--fg); }
 .content { padding: 36px 44px 120px; max-width: 1240px; min-width: 0; }
 
 .sec { padding-top: 40px; margin-top: 40px; border-top: 1px solid var(--line); }
@@ -197,20 +189,6 @@ details.file > summary { display: flex; align-items: baseline; gap: 8px; padding
 details.file > summary .path { flex: 1; overflow-wrap: anywhere; }
 details.file[open] > summary { border-bottom: 1px solid var(--line); }
 
-/* judgment input */
-.judge { margin-top: 28px; border: 1px solid var(--line-2); padding: 14px 16px 16px; }
-.judge h3 { margin: 0 0 10px; }
-.judge-opts { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 24px; }
-.judge-opts legend { padding: 0; margin-bottom: 8px; color: var(--fg-2); font-size: 14px; }
-.judge-opts label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
-.judge-opts input { margin: 0; accent-color: var(--fg); }
-.judge-note { display: block; margin-top: 12px; font-size: 14px; color: var(--fg-2); }
-
-/* summary */
-.sum-table td.m { white-space: pre-wrap; overflow-wrap: anywhere; }
-.sum-table th.c { width: 90px; white-space: nowrap; }
-.sum-table th.j { width: 130px; white-space: nowrap; }
-
 @media (max-width: 900px) {
   .layout { grid-template-columns: 1fr; }
   .toc { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 16px; }
@@ -223,20 +201,16 @@ details.file[open] > summary { border-bottom: 1px solid var(--line); }
 }
 </style>
 </head>
-<body data-storage-key="{{STORAGE_KEY}}" data-experiment="{{EXPERIMENT}}">
+<body data-experiment="{{EXPERIMENT}}">
 <div class="layout">
 <nav class="toc" aria-label="Table of contents">
   <ol>
     <li><a href="#overview">Overview</a></li>
-    {{TOC_CASES}}
-    <li><a href="#summary">Summary</a></li>
     <li><a href="#change">The change</a></li>
+    {{TOC_CASES}}
     <li><a href="#protocol">Fixed conditions</a></li>
   </ol>
-  <div class="ctl">
-    <label><input type="checkbox" id="blind" checked> <span>Blind mode</span></label>
-    <button type="button" id="save-html" class="plain">Save HTML</button>
-  </div>
+  <div class="ctl"><button type="button" id="save-html" class="plain">Save HTML</button></div>
 </nav>
 <main class="content">
 {{CONTENT}}
@@ -244,122 +218,15 @@ details.file[open] > summary { border-bottom: 1px solid var(--line); }
 </div>
 <script>
 (function () {
-  var body = document.body;
-  var KEY = body.getAttribute('data-storage-key');
-  var blindBox = document.getElementById('blind');
-  var cases = Array.prototype.slice.call(document.querySelectorAll('section.case'));
-  var labels = {};
-
-  // The blind assignment (X/Y mapping per case, left/right per pair) is made once and stored.
-  // Redrawing it on every toggle would change what X/Y mean mid-judgment.
-  var assign = null;
-  function assignment() {
-    if (assign) return assign;
-    try { assign = JSON.parse(localStorage.getItem(KEY + ':blind') || 'null'); } catch (e) { assign = null; }
-    if (!assign) {
-      assign = {};
-      cases.forEach(function (sec) {
-        assign[sec.id] = { flip: Math.random() < 0.5, swap: Array.prototype.map.call(sec.querySelectorAll('.pair'), function () { return Math.random() < 0.5; }) };
-      });
-      try { localStorage.setItem(KEY + ':blind', JSON.stringify(assign)); } catch (e) {}
-    }
-    return assign;
-  }
-
-  function setCase(sec, on) {
-    var a = assignment()[sec.id];
-    var flip = on && a.flip;
-    var map = on
-      ? { base: flip ? 'Condition Y' : 'Condition X', 'var': flip ? 'Condition X' : 'Condition Y' }
-      : { base: 'baseline', 'var': 'variant' };
-    labels[sec.id] = map;
-    Array.prototype.forEach.call(sec.querySelectorAll('.arm-label'), function (el) {
-      el.textContent = map[el.getAttribute('data-arm')];
-    });
-    Array.prototype.forEach.call(sec.querySelectorAll('.judge-opts label'), function (l) {
-      var arm = l.getAttribute('data-arm');
-      if (arm === 'tie') { l.style.order = 3; return; }
-      if (arm === 'unsure') { l.style.order = 4; return; }
-      var first = on ? map[arm] === 'Condition X' : arm === 'base';
-      l.style.order = first ? 1 : 2;
-    });
-    Array.prototype.forEach.call(sec.querySelectorAll('.pair'), function (pair, idx) {
-      var swap = on && !!a.swap[idx];
-      Array.prototype.forEach.call(pair.querySelectorAll('.run, .pair-sum'), function (el) {
-        var first = (el.getAttribute('data-arm') === 'base') !== swap;
-        el.style.order = first ? 1 : 2;
-      });
-    });
-  }
-
-  function verdictOf(sec) {
-    var c = sec.querySelector('.judge-opts input:checked');
-    return c ? c.value : null;
-  }
-
-  function updateSummary() {
-    cases.forEach(function (sec) {
-      var row = document.querySelector('#sum-table tr[data-case="' + sec.getAttribute('data-case') + '"]');
-      var v = verdictOf(sec);
-      var memo = sec.querySelector('.judge-note textarea').value.trim();
-      row.querySelector('.j').textContent = !v ? 'not judged' : (v === 'tie' ? 'No difference' : v === 'unsure' ? "Can't tell" : labels[sec.id][v]);
-      row.querySelector('.m').textContent = memo || '-';
-    });
-  }
-
-  function applyBlind(on) {
-    cases.forEach(function (sec) { setCase(sec, on); });
-    updateSummary();
-  }
-
-  // Judgments and notes are stored in this browser (keyed by experiment name + start time).
-  function collect() {
-    var out = { cases: {} };
-    cases.forEach(function (sec) {
-      out.cases[sec.getAttribute('data-case')] = { verdict: verdictOf(sec), memo: sec.querySelector('.judge-note textarea').value };
-    });
-    out.observations = document.getElementById('observations').value;
-    return out;
-  }
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(collect())); } catch (e) {} }
-  function restore() {
-    var d;
-    try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { d = null; }
-    if (!d) return;
-    cases.forEach(function (sec) {
-      var v = d.cases && d.cases[sec.getAttribute('data-case')];
-      if (!v) return;
-      if (v.verdict) { var i = sec.querySelector('.judge-opts input[value="' + v.verdict + '"]'); if (i) i.checked = true; }
-      sec.querySelector('.judge-note textarea').value = v.memo || '';
-    });
-    document.getElementById('observations').value = d.observations || '';
-  }
-
-  blindBox.addEventListener('change', function () { applyBlind(blindBox.checked); });
-  document.addEventListener('change', function (e) {
-    if (e.target && e.target.matches && e.target.matches('.judge-opts input')) { updateSummary(); save(); }
-  });
-  document.addEventListener('input', function (e) {
-    if (e.target && e.target.matches && e.target.matches('.judge-note textarea, #observations')) { updateSummary(); save(); }
-  });
-
-  // Download a copy with judgments and notes baked into the DOM; localStorage does not travel with the file.
+  // Download a copy of the page as it is now. Open/closed state of each section travels with it.
   document.getElementById('save-html').addEventListener('click', function () {
-    var clone = document.documentElement.cloneNode(true);
-    var liveT = document.querySelectorAll('textarea'), cloneT = clone.querySelectorAll('textarea');
-    for (var i = 0; i < liveT.length; i++) cloneT[i].textContent = liveT[i].value;
-    var liveR = document.querySelectorAll('input[type="radio"]'), cloneR = clone.querySelectorAll('input[type="radio"]');
-    for (var j = 0; j < liveR.length; j++) { if (liveR[j].checked) cloneR[j].setAttribute('checked', ''); else cloneR[j].removeAttribute('checked'); }
-    var blob = new Blob(['<!DOCTYPE html>\n' + clone.outerHTML], { type: 'text/html' });
+    var blob = new Blob(['<!DOCTYPE html>\n' + document.documentElement.outerHTML], { type: 'text/html' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = (body.getAttribute('data-experiment') || 'abdiff') + '-report.html';
+    a.download = (document.body.getAttribute('data-experiment') || 'abdiff') + '-report.html';
     document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(a.href);
   });
-
-  restore();
-  applyBlind(blindBox.checked);
 
   // highlight the current position in the table of contents
   var links = {};

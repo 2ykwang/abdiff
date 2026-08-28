@@ -327,13 +327,13 @@ def render_meta(run):
 
 def render_run(arm_key, label, run):
     if run is None:
-        return (f'<details class="run" data-arm="{arm_key}" open><summary><span class="arm-label" data-arm="{arm_key}">{label}</span>'
+        return (f'<details class="run" data-arm="{arm_key}" open><summary><span class="arm-label">{label}</span>'
                 f'<span class="run-sum">not run</span></summary></details>')
     p = run["parsed"]
     final_html = f'<pre class="resp">{esc(p["final"])}</pre>' if p["final"] is not None else '<p class="fine">No final response.</p>'
     return (
         f'<details class="run" data-arm="{arm_key}" open>'
-        f'<summary><span class="arm-label" data-arm="{arm_key}">{label}</span><span class="run-sum">{esc(run_summary(run))}</span></summary>'
+        f'<summary><span class="arm-label">{label}</span><span class="run-sum">{esc(run_summary(run))}</span></summary>'
         f'<div class="run-section"><div class="lbl">Final response</div>{final_html}</div>'
         f'<div class="run-section"><details class="trace"><summary>Trace / {len(p["trace"])} tool calls</summary>{render_trace(p, run["wt"])}</details></div>'
         f'<div class="run-section">{render_instructions(run["instr"], run["wt"])}</div>'
@@ -357,7 +357,7 @@ def render_case(tc, n, results):
     for k in range(1, n + 1):
         runs = {arm: load_run(results, cid, arm, k) for arm, _, _ in ARMS}
         sums = "".join(
-            f'<span class="pair-sum" data-arm="{key}"><span class="arm-label" data-arm="{key}">{label}</span> {esc(run_summary(runs[arm]))}</span>'
+            f'<span class="pair-sum" data-arm="{key}"><span class="arm-label">{label}</span> {esc(run_summary(runs[arm]))}</span>'
             for arm, key, label in ARMS
         )
         # Only the first pair is expanded. The rest are compared by their summary line and opened as needed.
@@ -365,19 +365,7 @@ def render_case(tc, n, results):
         for arm, key, label in ARMS:
             out.append(render_run(key, label, runs[arm]))
         out.append("</div></details>")
-    legend = "Which condition showed the expected effect more clearly?"
-    if tc.get("kind") == "control":
-        legend += " (no relevant difference is the expected outcome)"
-    out.append(
-        f'<div class="judge"><h3>Judgment</h3>'
-        f'<fieldset class="judge-opts"><legend>{legend}</legend>'
-        f'<label data-arm="base"><input type="radio" name="j-{esc(cid)}" value="base"><span><span class="arm-label" data-arm="base">baseline</span></span></label>'
-        f'<label data-arm="var"><input type="radio" name="j-{esc(cid)}" value="var"><span><span class="arm-label" data-arm="var">variant</span></span></label>'
-        f'<label data-arm="tie"><input type="radio" name="j-{esc(cid)}" value="tie"><span>No difference</span></label>'
-        f'<label data-arm="unsure"><input type="radio" name="j-{esc(cid)}" value="unsure"><span>Can\'t tell (indistinguishable from run-to-run variance)</span></label></fieldset>'
-        f'<label class="judge-note">Notes<textarea rows="3"></textarea></label></div>'
-        "</section>"
-    )
+    out.append("</section>")
     return "".join(out)
 
 
@@ -406,7 +394,7 @@ def render_overview(exp, man, readings, all_runs, n):
                                         + (", interrupted" if readings.get("interrupted") else "")
                                         + f", ${reading_cost:.2f}. Isolated claude -p: no tools, no project or user files, not told the condition, hypothesis or variant.patch. Collapsed under each run.")))
     if n < 3:
-        rows.append(("Caution", f"<b class=\"warn\">N={n}.</b> Run-to-run variance can't be told apart from the difference between conditions, so don't read \"No difference\" as \"no effect\". Rerun with N=3 or more before drawing a conclusion."))
+        rows.append(("Caution", f"<b class=\"warn\">N={n}.</b> Run-to-run variance can't be told apart from the difference between conditions. Rerun with N=3 or more before drawing a conclusion."))
     trs = "".join(f"<tr><th>{k}</th><td>{v}</td></tr>" for k, v in rows)
     return (f'<section class="sec" id="overview"><h1>{esc(exp["name"])}</h1>'
             f'<p class="doc-meta">abdiff experiment report / baseline commit {esc((man.get("base_commit") or "")[:12])}</p>'
@@ -426,20 +414,6 @@ def render_protocol(man):
             f'<div class="field"><div class="lbl">Command</div><pre class="block">{esc(man.get("command_template") or "")}</pre></div></section>')
 
 
-def render_summary(exp):
-    trs = "".join(
-        f'<tr data-case="{esc(t["id"])}"><td><a href="#case-{esc(t["id"])}">{esc(t["id"])}</a></td><td class="j">not judged</td><td class="m">-</td></tr>'
-        for t in exp["test_cases"]
-    )
-    return (
-        '<section class="sec" id="summary"><h2>Summary</h2>'
-        f'<div class="scroll"><table class="sum-table" id="sum-table"><thead><tr><th class="c">Case</th><th class="j">Judgment</th><th>Notes</th></tr></thead><tbody>{trs}</tbody></table></div>'
-        '<h3>Observed differences</h3>'
-        '<textarea id="observations" rows="8"></textarea>'
-        "</section>"
-    )
-
-
 def main():
     if len(sys.argv) != 2:
         print("usage: report.py <results-dir>", file=sys.stderr)
@@ -454,13 +428,12 @@ def main():
     all_runs = [load_run(results, t["id"], arm, k) for t in exp["test_cases"] for k in range(1, n + 1) for arm, _, _ in ARMS]
     readings = read_json(results / "readings.json")
 
-    # Order: overview -> per-case comparison -> summary -> the change -> fixed conditions.
-    # The diff, which reveals which side is the variant, comes after the judgment.
+    # Order: overview -> the change -> per-case comparison -> fixed conditions.
+    # The diff comes before the cases: knowing what changed is what makes the traces readable.
     content = "".join([
         render_overview(exp, man, readings, all_runs, n),
-        "".join(render_case(t, n, results) for t in exp["test_cases"]),
-        render_summary(exp),
         render_change(read_text(results / "variant.patch")),
+        "".join(render_case(t, n, results) for t in exp["test_cases"]),
         render_protocol(man),
     ])
     toc = "".join(
@@ -470,7 +443,6 @@ def main():
     page = (TEMPLATE.read_text(encoding="utf-8")
             .replace("{{TITLE}}", esc(f"abdiff / {exp['name']}"))
             .replace("{{EXPERIMENT}}", esc(exp["name"]))
-            .replace("{{STORAGE_KEY}}", esc(f"abdiff:{exp['name']}:{man.get('started_at') or ''}"))
             .replace("{{TOC_CASES}}", toc)
             .replace("{{CONTENT}}", content))
     out = results / "report.html"

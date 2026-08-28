@@ -1,6 +1,6 @@
 ---
 name: abdiff
-description: Check whether one change to Claude Code's instructions or context (CLAUDE.md, .claude/rules, referenced docs, skills) actually changes behavior. Runs the same prompts against HEAD and HEAD + the uncommitted diff, N times each, and builds an HTML report for a person to compare the runs with condition labels hidden. Use it to test adding, deleting, rewording, or moving a rule, or to check whether an @import or a referenced doc is loaded and followed. Not for checking application code or anything automated tests already cover. Only run it when the user explicitly asks for it; never start an experiment on your own.
+description: Check whether one change to Claude Code's instructions or context (CLAUDE.md, .claude/rules, referenced docs, skills) actually changes behavior. Runs the same prompts against HEAD and HEAD + the uncommitted diff, N times each, and builds an HTML report for a person to compare the runs side by side. Use it to test adding, deleting, rewording, or moving a rule, or to check whether an @import or a referenced doc is loaded and followed. Not for checking application code or anything automated tests already cover. Only run it when the user explicitly asks for it; never start an experiment on your own.
 argument-hint: "[what you want to test]"
 ---
 
@@ -93,9 +93,9 @@ python3 "${CLAUDE_PLUGIN_ROOT}/skills/abdiff/scripts/report.py" .abdiff/<name>
 
 This writes `.abdiff/<name>/report.html`. Give the user the path and have them open it in a browser (`open .abdiff/<name>/report.html` on macOS). The report layout and the record formats are in [references/trace.md](references/trace.md).
 
-### 5. Judging
+### 5. Reading
 
-**A person judges.** The report opens with blind mode on. Verdicts are entered in the report and stored in the browser; to share, use "Save HTML" to download a copy with the verdicts. "No difference" and "Can't tell" are different answers: the first means the runs were comparable and showed no relevant difference; the second means variance or errors made a conclusion impossible. The LLM reading, if present, is collapsed under each run: read the raw record first, then open it and check each citation against that record.
+**A person compares.** For each case, read the two arms side by side: final response, tool calls, loaded instruction files, changed files. The change under test is shown before the cases so you know what to look for in the traces. "No difference" and "can't tell" are different conclusions: the first means the runs were comparable and showed no relevant difference; the second means variance or errors made a conclusion impossible. The LLM reading, if present, is collapsed under each run: read the raw record first, then open it and check each citation against that record.
 
 ### 6. Cleanup
 
