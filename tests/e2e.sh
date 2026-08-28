@@ -10,7 +10,8 @@
 # Whether the model actually appends the canary is model behavior, so it's reported as a warning,
 # not a failure. Every other check is deterministic and fails the script.
 #
-# Cost: 4 claude-haiku-4-5 runs (a few cents). Requires: logged-in claude CLI, git, python3
+# The reader (reading.py) is run on every record and checked for a well-formed reading.json.
+# Cost: 4 claude-haiku-4-5 runs plus 4 reading calls (a few cents). Requires: logged-in claude CLI, git, python3
 # Usage: bash tests/e2e.sh
 #   ABDIFF_TEST_MODEL=claude-sonnet-5 bash tests/e2e.sh   # use another model
 set -euo pipefail
@@ -56,6 +57,7 @@ cat > .abdiff/e2e/experiment.json <<EOF
   "permission": "bypass",
   "timeout_sec": 180,
   "budget_usd": 0.3,
+  "reading": {"model": "$MODEL"},
   "test_cases": [
     {"id": "TC-01", "kind": "control", "title": "read a file",
      "prompt": "Tell me the contents of hello.txt in one line",
@@ -70,6 +72,8 @@ EOF
 python3 "$PLUGIN_DIR/skills/abdiff/scripts/run.py" .abdiff/e2e/experiment.json --dry-run
 RUN_RC=0
 python3 "$PLUGIN_DIR/skills/abdiff/scripts/run.py" .abdiff/e2e/experiment.json || RUN_RC=$?
+READ_RC=0
+python3 "$PLUGIN_DIR/skills/abdiff/scripts/reading.py" .abdiff/e2e || READ_RC=$?
 python3 "$PLUGIN_DIR/skills/abdiff/scripts/report.py" .abdiff/e2e
 
 # Copy results before checking so a failed check still leaves something to inspect.
@@ -119,6 +123,20 @@ check "TC-02 variant changed src/add.js" grep -q 'src/add.js' .abdiff/e2e/runs/T
 check "canary absent from baseline streams" bash -c '! grep -q "ABDIFF-CANARY" .abdiff/e2e/runs/TC-01/baseline/1/stream.jsonl .abdiff/e2e/runs/TC-02/baseline/1/stream.jsonl'
 check "no worktree left behind" test "$(git worktree list | wc -l | tr -d ' ')" = "1"
 check ".abdiff/ added to .git/info/exclude" grep -q '^\.abdiff/$' "$(git rev-parse --git-path info/exclude)"
+check "reading exit code 0" test "$READ_RC" -eq 0
+check "reading.json in every run has findings with observed/evidence" python3 - <<'EOF'
+import json, sys
+ok = True
+for run in ("TC-01/baseline", "TC-01/variant", "TC-02/baseline", "TC-02/variant"):
+    j = json.load(open(f".abdiff/e2e/runs/{run}/1/reading.json"))
+    if j.get("error") or not j.get("findings"):
+        ok = False; print(f"      - {run}: {j.get('error') or 'no findings'}")
+    elif any(f.get("observed") not in ("yes", "no", "unclear") or not f.get("statement") or not f.get("evidence") for f in j["findings"]):
+        ok = False; print(f"      - {run}: malformed finding")
+sys.exit(0 if ok else 1)
+EOF
+check "reader ran isolated: no tools, no setting sources, strict MCP, auto memory off (readings.json command)" bash -c 'grep -q -- "CLAUDE_CODE_DISABLE_AUTO_MEMORY=1 claude -p .*--tools '"'"''"'"' --setting-sources '"'"''"'"' --strict-mcp-config" .abdiff/e2e/readings.json'
+check "report shows the LLM reading per run, collapsed" bash -c '[ "$(grep -o "<details class=\"instr\"><summary>LLM reading" .abdiff/e2e/report.html | wc -l | tr -d " ")" = 4 ] && ! grep -q "<details class=\"instr\" open><summary>LLM reading" .abdiff/e2e/report.html'
 check "report has both conditions and both cases" bash -c 'grep -q "data-arm=\"base\"" .abdiff/e2e/report.html && grep -q "data-arm=\"var\"" .abdiff/e2e/report.html && grep -q "data-case=\"TC-02\"" .abdiff/e2e/report.html'
 
 # Model behavior: checked on the final answer only (the result event), not on the whole stream.

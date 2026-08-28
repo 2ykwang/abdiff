@@ -24,6 +24,8 @@ You add a rule to CLAUDE.md, use it a few times, and end up guessing whether Cla
 2. Run `/abdiff:abdiff <what you want to test>`. Check the questionnaire and answer "go".
 3. Open `.abdiff/<experiment>/report.html`. Inside Claude Code: `!open <path>`.
 
+Questionnaire item 8 can add an isolated Claude reading of each run: it marks each expected-effect statement `yes`, `no`, or `unclear` with a citation. It doesn't compare the two sides or make the verdict; you do.
+
 ## Demos
 
 Four experiments that show what this tool is for. Each link opens the report. The setup and the exact change for each are in [demos/](demos/).

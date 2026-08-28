@@ -135,6 +135,7 @@ def run_one(exp, root, head, patch, base_dir, results, tc, arm, k):
     wt = base_dir / f"run-{uuid.uuid4().hex[:8]}"
     rd = results / "runs" / tc["id"] / arm / str(k)
     rd.mkdir(parents=True, exist_ok=True)
+    (rd / "reading.json").unlink(missing_ok=True)  # a reading of a previous run with this name
     git(root, "worktree", "add", "--detach", "-q", str(wt), head)
     try:
         if arm == "variant":

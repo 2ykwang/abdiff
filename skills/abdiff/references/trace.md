@@ -1,6 +1,6 @@
 # Records and the report
 
-The runner stores raw records only. The report generator reads them and builds the HTML.
+The runner stores raw records only. The reader, if run, adds its reading next to them. The report generator reads both and builds the HTML.
 
 ## Result directory
 
@@ -9,6 +9,7 @@ The runner stores raw records only. The report generator reads them and builds t
 ├── experiment.json        # Experiment definition (orchestrator writes it from the questionnaire answers)
 ├── manifest.json          # Written by the runner: actual N, base commit, Claude Code version, start/end time, interrupted flag, fixed conditions, command
 ├── variant.patch          # git diff HEAD --binary (the variant condition)
+├── readings.json          # Written by reading.py (optional): model, command, runs read / failed, interrupted flag
 ├── report.html            # Output of report.py
 └── runs/<case id>/<baseline|variant>/<k>/
     ├── stream.jsonl       # Raw claude -p --output-format stream-json
@@ -16,7 +17,8 @@ The runner stores raw records only. The report generator reads them and builds t
     ├── instructions.jsonl # Instruction-file load events recorded by the InstructionsLoaded hook
     ├── changes.patch      # Files the run changed (git diff --cached <temp commit> --binary)
     ├── run.json           # Exit code, timeout flag, duration, worktree path, temp commit, command
-    └── setup.txt          # Output of the setup command (only when setup is set)
+    ├── setup.txt          # Output of the setup command (only when setup is set)
+    └── reading.json       # Output of reading.py (optional): summary, findings[] {statement, observed, evidence}, model, cost_usd
 ```
 
 The runner adds `.abdiff/` to `.git/info/exclude`. It doesn't touch `.gitignore`, because that edit would leak into the variant diff.
@@ -59,14 +61,18 @@ This record proves **that an input file entered context**. Whether the model fol
 
 After `git add -A`, this is the diff against the temporary commit made at run start (which already contains the variant patch and setup output). So files created by setup are excluded, and changes the agent made are included even if it committed them during the run. The report splits the patch per file: the list (path, status, +N −M) is always visible, the diff body is collapsed. If there's exactly one file with 40 lines or fewer, it's expanded. Binary patch bodies aren't shown.
 
+## reading.json
+
+Written by `reading.py` for each run. `findings[]` has one entry per countable statement in `expect`, rewritten as a fact about this one run: `statement` (the fact), `observed` (`yes` / `no` / `unclear`), `evidence` (tool call number, diff path and line, or a quote). `summary` is one factual sentence on what the run did. A failed call writes `{"error": ...}` instead. The reader's input and isolation are described in [reading.md](reading.md).
+
 ## Report layout
 
 Anything that reveals which arm is the variant (the diff, the fixed conditions) comes after the verdicts. Blind mode is on when the report opens.
 
 | Order | Section | Contents |
 |---|---|---|
-| 1 | Overview | Hypothesis, run time, Claude Code version, observed model, N, number of cases, number of runs and abnormal runs, total cost. Warning if N is under 3 |
-| 2 | Per-case comparison | Prompt, expected effect, and for each run k a baseline/variant pair (only the first pair expanded). Per run: final response (expanded), trace with tool results (collapsed), loaded instruction files (collapsed), changed files (list expanded, diff collapsed), exit code and anomaly flags |
+| 1 | Overview | Hypothesis, run time, Claude Code version, observed model, N, number of cases, number of runs and abnormal runs, run cost (LLM reading excluded), LLM reading status if it ran. Warning if N is under 3 |
+| 2 | Per-case comparison | Prompt, expected effect, and for each run k a baseline/variant pair (only the first pair expanded). Per run: final response (expanded), trace with tool results (collapsed), loaded instruction files (collapsed), changed files (list expanded, diff collapsed), LLM reading (collapsed, only if judged), exit code and anomaly flags |
 | | Verdict | "Which side showed the behavior related to the expected effect more clearly?" Options: condition X / condition Y / no difference / can't tell, plus a note. Control cases show "no relevant difference is the expected value" |
 | 3 | Summary | Case × verdict table, observed differences (free text) |
 | 4 | Variant condition | `variant.patch` per file |
