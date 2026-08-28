@@ -10,7 +10,7 @@
       "name": "abdiff",
       "source": "./",
       "description": "Check whether one change to Claude Code's instructions (CLAUDE.md, .claude/rules, referenced docs, skills) actually changes behavior. Runs the same prompts before and after the uncommitted change and builds a report for a person to compare the runs side by side.",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "category": "testing",
       "keywords": [
         "eval",
