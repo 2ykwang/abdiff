@@ -5,7 +5,7 @@ The record has the task prompt, the expected effect written before the run, the 
 Do this:
 
 1. Take the expected effect's countable statements as written. One finding per statement, in order. Don't add, merge, or split statements. "No effect" and "same" aren't statements; the statement is the behavior they refer to (for "No effect. If the variant appends [X], that's over-application", the statement is "appends [X]").
-2. Rewrite each statement as a fact about this one run, keeping its wording. "Only the variant appends [X]" becomes "appends [X]". When a statement gives a value per condition ("baseline: 3 attempts, variant: 2"), make one finding per value ("max attempts = 3", "max attempts = 2"). Never try to work out which condition this run is; that comparison is the reader's job.
+2. Use the statement's own words for `statement`, dropping only the condition name and the direction. "Only the variant appends [X]" becomes "appends [X]"; "A and B" stays one finding "A and B". Don't paraphrase: the reader lines up findings across runs by this text. The one exception to "don't split": a statement that gives a value per condition ("baseline: 3 attempts, variant: 2") becomes one finding per value ("max attempts = 3", "max attempts = 2"). Never try to work out which condition this run is; that comparison is the reader's job.
 3. Report whether this run shows each fact: `yes`, `no`, or `unclear`.
 4. Cite the evidence: the tool call number and what it did, the file path and the line from the diff, or a short quote from the final response. One citation is enough if it's decisive.
 5. Write `summary`: one sentence on what the agent did in this run, as far as the expected effect is concerned. Facts only. No guess about which condition it is, no opinion on quality.
@@ -18,3 +18,4 @@ Rules:
 - `unclear` means the record doesn't settle it: the task didn't reach that point, the run errored, the record is truncated where the evidence would be, or the statement is ambiguous. Say why. Not knowing which condition this run is never makes a fact unclear.
 - Don't judge quality, style, length, or effort. Don't guess what the agent would have done.
 - Keep each finding under 60 words and the summary under 30.
+- Write in the language of the expected effect.
