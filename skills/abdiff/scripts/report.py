@@ -226,7 +226,7 @@ def load_run(results, cid, arm, k):
         "changes": split_patch(read_text(rd / "changes.patch")),
         "stderr": read_text(rd / "stderr.txt").strip(),
         "setup": read_text(rd / "setup.txt").strip(),
-        "reading": read_json(rd / "reading.json"),
+        "check": read_json(rd / "check.json"),
     }
 
 
@@ -288,19 +288,19 @@ def render_instructions(instr, wt):
     return f'<details class="instr"><summary>Instruction files loaded: {len(instr)}</summary><ul class="files">{lis}</ul></details>'
 
 
-def render_reading(j):
+def render_check(j):
     # Collapsed, and the summary line carries no yes/no counts, so the person reads the raw record
-    # before the LLM's reading of it.
+    # before the LLM's check of it.
     findings = j.get("findings") if isinstance(j, dict) else None
     if not isinstance(findings, list) or not all(isinstance(f, dict) for f in findings):
         err = j.get("error") if isinstance(j, dict) else None
-        return f'<div class="run-section"><details class="instr"><summary>LLM reading: failed</summary><pre class="block">{esc(err or "malformed reading.json")}</pre></details></div>'
+        return f'<div class="run-section"><details class="instr"><summary>LLM check: failed</summary><pre class="block">{esc(err or "malformed check.json")}</pre></details></div>'
     lis = "".join(
         f'<li><span class="tag">{esc(f.get("observed"))}</span> {esc(f.get("statement"))}<span class="fine">{esc(f.get("evidence"))}</span></li>'
         for f in findings
     )
-    return (f'<div class="run-section"><details class="instr"><summary>LLM reading: {len(findings)} findings</summary>'
-            f'<p>{esc(j.get("summary"))}</p><ul class="reading">{lis}</ul><p class="fine">Read by {esc(j.get("model") or "?")} from the trace, diff and response only. Check each citation in the record above; not a verdict.</p></details></div>')
+    return (f'<div class="run-section"><details class="instr"><summary>LLM check: {len(findings)} statement{"s" if len(findings) != 1 else ""}</summary>'
+            f'<p>{esc(j.get("summary"))}</p><ul class="check">{lis}</ul><p class="fine">Checked by {esc(j.get("model") or "?")} from the trace, diff and response only. Verify each citation in the record above; not a verdict.</p></details></div>')
 
 
 def render_meta(run):
@@ -338,7 +338,7 @@ def render_run(arm_key, label, run):
         f'<div class="run-section"><details class="trace"><summary>Trace / {len(p["trace"])} tool calls</summary>{render_trace(p, run["wt"])}</details></div>'
         f'<div class="run-section">{render_instructions(run["instr"], run["wt"])}</div>'
         f'<div class="run-section">{render_files(run["changes"])}</div>'
-        f'{render_reading(run["reading"]) if run["reading"] else ""}'
+        f'{render_check(run["check"]) if run["check"] else ""}'
         f'{render_meta(run)}'
         f'</details>'
     )
@@ -371,7 +371,7 @@ def render_case(tc, n, results):
 
 # ---------- page ----------
 
-def render_overview(exp, man, readings, all_runs, n):
+def render_overview(exp, man, checks, all_runs, n):
     models = sorted({r["parsed"]["model"] for r in all_runs if r and r["parsed"]["model"]})
     versions = sorted({r["parsed"]["version"] for r in all_runs if r and r["parsed"]["version"]})
     done = sum(1 for r in all_runs if r)
@@ -386,13 +386,13 @@ def render_overview(exp, man, readings, all_runs, n):
         ("N", f"{n} per condition per test case"),
         ("Test cases", f"{len(exp['test_cases'])} ({sum(1 for t in exp['test_cases'] if t.get('kind') != 'control')} target, {sum(1 for t in exp['test_cases'] if t.get('kind') == 'control')} control)"),
         ("Runs", f"{done}/{total} completed / {failed} with timeout, error or permission denials" + (" / experiment interrupted" if man.get("interrupted") else "")),
-        ("Run cost", f"${cost:.2f}" + (" (LLM reading excluded)" if readings else "")),
+        ("Run cost", f"${cost:.2f}" + (" (LLM check excluded)" if checks else "")),
     ]
-    if isinstance(readings, dict):
-        reading_cost = sum(r["reading"].get("cost_usd") or 0 for r in all_runs if r and isinstance(r["reading"], dict))
-        rows.append(("LLM reading", esc(f"{readings.get('read')}/{readings.get('runs')} runs read by {readings.get('model') or 'claude -p default'}, {readings.get('failed')} failed"
-                                        + (", interrupted" if readings.get("interrupted") else "")
-                                        + f", ${reading_cost:.2f}. Isolated claude -p: no tools, no project or user files, not told the condition, hypothesis or variant.patch. Collapsed under each run.")))
+    if isinstance(checks, dict):
+        check_cost = sum(r["check"].get("cost_usd") or 0 for r in all_runs if r and isinstance(r["check"], dict))
+        rows.append(("LLM check", esc(f"{checks.get('checked')}/{checks.get('runs')} runs checked by {checks.get('model') or 'claude -p default'}, {checks.get('failed')} failed"
+                                        + (", interrupted" if checks.get("interrupted") else "")
+                                        + f", ${check_cost:.2f}. Isolated claude -p: no tools, no project or user files, not told the condition, hypothesis or variant.patch. Collapsed under each run.")))
     if n < 3:
         rows.append(("Caution", f"<b class=\"warn\">N={n}.</b> Run-to-run variance can't be told apart from the difference between conditions. Rerun with N=3 or more before drawing a conclusion."))
     trs = "".join(f"<tr><th>{k}</th><td>{v}</td></tr>" for k, v in rows)
@@ -426,12 +426,12 @@ def main():
     man = read_json(results / "manifest.json", {}) or {}
     n = int(man.get("n") or exp.get("n") or 3)  # the n the runner actually used is in manifest.json
     all_runs = [load_run(results, t["id"], arm, k) for t in exp["test_cases"] for k in range(1, n + 1) for arm, _, _ in ARMS]
-    readings = read_json(results / "readings.json")
+    checks = read_json(results / "checks.json")
 
     # Order: overview -> the change -> per-case comparison -> fixed conditions.
     # The diff comes before the cases: knowing what changed is what makes the traces readable.
     content = "".join([
-        render_overview(exp, man, readings, all_runs, n),
+        render_overview(exp, man, checks, all_runs, n),
         render_change(read_text(results / "variant.patch")),
         "".join(render_case(t, n, results) for t in exp["test_cases"]),
         render_protocol(man),
