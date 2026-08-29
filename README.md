@@ -6,12 +6,12 @@ You add a rule to CLAUDE.md, use it a few times, and end up guessing whether Cla
 
 [한국어](README_ko.md)
 
-## What you learn
+## What it does
 
-- Whether a new rule actually changes how Claude works or what it produces
-- Whether a rule you want to delete was doing anything
-- Whether a reference doc gets read and followed, or just sits there
-- Which of two wordings of the same rule Claude follows more consistently
+- Shows whether a new rule actually changes how Claude works or what it produces
+- Shows whether a rule you want to delete was doing anything
+- Shows whether a reference doc gets read and followed, or just sits there
+- Shows which of two wordings of the same rule Claude follows more consistently
 
 ## Usage
 
@@ -23,8 +23,6 @@ You add a rule to CLAUDE.md, use it a few times, and end up guessing whether Cla
 1. Edit the rule. Leave the change uncommitted.
 2. Run `/abdiff:abdiff <what you want to test>`. Check the questionnaire and answer "go".
 3. Open `.abdiff/<experiment>/report.html`. Inside Claude Code: `!open <path>`.
-
-Questionnaire item 8 can add an isolated Claude reading of each run: it marks each expected-effect statement `yes`, `no`, or `unclear` with a citation. It doesn't compare the two sides or make the verdict; you do.
 
 ## Demos
 
@@ -38,7 +36,7 @@ Four experiments that show what this tool is for. Each link opens the report. Th
 ## Good to know
 
 - Total runs = `2 × repeats × test cases`. Time and cost depend on the model and the task.
-- Runs execute in a throwaway copy of the project with permission prompts skipped. The copy is not a sandbox: Bash can still touch files outside it. For projects you don't trust, use allowlist mode. Setup is in `skills/abdiff/references/protocol.md`.
+- Runs execute in a throwaway copy of the project with permission prompts skipped. The copy is not a sandbox: Bash can still touch files outside it. For projects you don't trust, restrict tools with the `permission` field (see `skills/abdiff/references/protocol.md`).
 - User-level settings are not applied. Only files inside the project can be the variable.
 - Requires Claude Code CLI, git, and python3 3.9+.
 
