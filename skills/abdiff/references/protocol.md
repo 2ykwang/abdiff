@@ -76,5 +76,5 @@ Internal file the orchestrator writes from the questionnaire answers. Users don'
 | `permission` | no | See "Permission mode" above. Default `"bypass"` |
 | `timeout_sec` | no | Time limit per run in seconds. Default 600 |
 | `budget_usd` | no | `--max-budget-usd` per run. Default 2.0 |
-| `reading` | no | Settings for the optional `reading.py` step: `{"model": "<model for the reading>", "budget_usd": 0.5, "timeout_sec": 180}`. Every key is optional. Use a model other than the one under test when possible. What the reader sees: [reading.md](reading.md) |
+| `check` | no | Settings for the optional `check.py` step: `{"model": "<model for the check>", "budget_usd": 0.5, "timeout_sec": 180}`. Every key is optional. Use a model other than the one under test when possible. What the checker sees: [check.md](check.md) |
 | `setup` | no | Shell command run in every worktree. The worktree has no untracked files (`node_modules` etc.), so prompts that run tests need this. The env var `ABDIFF_PROJECT` (path to the original project) is available. The same command applies to both arms |

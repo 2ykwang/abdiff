@@ -86,7 +86,7 @@ When moving the same text between locations, compare one pair of locations at a 
 | Not done | Why | Minimum allowed instead |
 |---|---|---|
 | Statistical tests | N is small and each case is a different task, so samples aren't independent or homogeneous | a/N vs b/N per case |
-| Pairwise or aggregate LLM verdicts | They add position, length, and self-preference bias, and answer "which is better", which isn't the question | Optional reading of one run at a time against the pre-written `expect`, with citations, not told the condition. A person still compares the arms. See [reading.md](reading.md) |
+| Pairwise or aggregate LLM verdicts | They add position, length, and self-preference bias, and answer "which is better", which isn't the question | Optional check of one run at a time against the pre-written `expect`, with citations, not told the condition. A person still compares the arms. See [check.md](check.md) |
 | Automatic prompt generation | Generators leak the target rule into the prompt or produce easy tasks with no trigger | A blank form and a checklist |
 | Aggregate score, automatic winner | Opposite effects across cases cancel out in an average | Per-case human verdicts with raw evidence |
 
