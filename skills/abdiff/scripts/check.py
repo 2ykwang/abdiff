@@ -123,9 +123,14 @@ def check_one(cfg, tc, rd, rj):
         out = json.loads(r.stdout)
     except json.JSONDecodeError:
         return {"error": f"exit {r.returncode}: {r.stderr.strip()[-500:] or 'no JSON output'}"}
+    model = None
+    if isinstance(out, list):
+        # Claude Code 2.1.250 emits every event as one array. The result event is last; the model is in the init event.
+        model = next((e.get("model") for e in out if isinstance(e, dict) and e.get("subtype") == "init"), None)
+        out = next((e for e in reversed(out) if isinstance(e, dict) and e.get("type") == "result"), {})
     if r.returncode != 0 or out.get("is_error") or not isinstance(out.get("structured_output"), dict):
         return {"error": out.get("result") or f"exit {r.returncode}: {out.get('subtype') or 'no structured output'}"}
-    model = out.get("model") or ",".join(out.get("modelUsage") or {}) or cfg.get("model")
+    model = model or out.get("model") or ",".join(out.get("modelUsage") or {}) or cfg.get("model")
     return {**out["structured_output"], "model": model, "cost_usd": out.get("total_cost_usd")}
 
 
